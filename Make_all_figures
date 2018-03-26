@@ -1,0 +1,103 @@
+#!/bin/bash  
+# Script to run all models and make all figures
+
+if [ "$#" -ne 1 ]; then
+    echo "Run: Make_all_figures <Fortran/Python>"
+    exit 0
+fi
+
+if [ "$1" == "Fortran" ]; then
+echo "Using Fortran..."
+Run_command="AH"
+make all
+else
+echo "Using Python..."
+Run_command="python AH_RJMCMC.py"
+fi
+
+echo "Running RJMCMC...."
+$Run_command input_Synt_Paris700 > Screen_output_Synt_Paris700
+$Run_command input_Paris700 > Screen_output_Paris700
+$Run_command input_Synt_Hawaii > Screen_output_Synt_Hawaii
+$Run_command input_Hawaii > Screen_output_Hawaii
+$Run_command input_Lubeck_Paris700 > Screen_output_Lubeck_Paris700
+$Run_command input_Paris700_prior_sampling > Screen_output_Paris700_prior_sampling
+$Run_command input_Hawaii_prior_sampling > Screen_output_Hawaii_prior_sampling
+$Run_command input_Lubeck_Paris700_prior_sampling > Screen_output_Lubeck_Paris700_prior_sampling
+$Run_command input_Synt_Hawaii_prior_sampling > Screen_output_Synt_Hawaii_prior_sampling
+$Run_command input_Synt_Paris700_prior_sampling > Screen_output_Synt_Paris700_prior_sampling
+
+$Run_command input_Herve_etal_2017 > Screen_output_Herve_etal_2017
+$Run_command input_Tema_etal_2017 > Screen_output_Tema_etal_2017
+
+# Remove outlying data from Paris700 and rerun the model..
+cd Outputs_Paris700
+python ../remove_outlying_data.py
+cp data_within_credible_bounds.dat ../archeomagnetic_data/Paris700_within_credible_interval.txt
+cd ..
+$Run_command input_Paris700_pass_2 > Screen_output_Paris700_pass_2 
+
+
+
+# only Fortran version..
+if [ "$1" == "Fortran" ]; then
+IL input_Synt_Paris700_IL > Screen_output_Synt_Paris_IL
+cd Outputs_Synt_Paris700_IL
+python ../make_plots.py
+cd ..
+fi
+
+
+#
+echo "Making all the figures..."
+# Now make all the plots...
+# .......
+cd Outputs_Synt_Paris700
+python ../make_plots.py
+python ../make_joint_distribution_plots.py 0154
+python ../make_joint_distribution_plots.py 0119
+# only with Fortran
+if [ "$1" == "Fortran" ]; then
+python ../make_AH_IL_comparison.py ../Outputs_Synt_Paris700_IL
+fi
+#
+cd ..
+
+cd Outputs_Paris700
+python ../make_plots.py
+python ../period_analysis_Paris700.py 
+cd ..
+
+cd Outputs_Hawaii
+python ../make_plots.py
+python ../period_analysis_Hawaii.py
+cd ..
+
+cd Outputs_Synt_Hawaii
+python ../make_plots.py
+cd ..
+
+cd Outputs_Lubeck_Paris700
+python ../make_plots.py
+python ../make_Stratified_marginal_age_plot.py
+python ../make_joint_distribution_plots.py 13
+python ../make_joint_distribution_plots.py 22
+cd ..
+
+cd Outputs_Paris700_pass_2
+python ../make_plots.py
+cd ..
+
+# Make comparative figures
+cd Comparisons/Herve_2017_comparison/
+make_Herve_comparison.py
+
+cd ../LeGoff_Paris700_comparison
+make_Paris700_comparison_plot.py
+
+cd ../Tema_etal_2017_comparison
+make_Tema_comparison.py
+
+
+cd ../../Outputs_Tema_etal_2017_dataset
+python ../make_Posterior_with_shifted_ages.py 

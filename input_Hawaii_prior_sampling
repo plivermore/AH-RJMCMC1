@@ -1,0 +1,56 @@
+# --------
+# Input file 
+# --------
+# Data_file 
+Data_file archeomagnetic_data/Hawaii.txt
+#
+# Column format for datafile, in the order age, delta age, intensity, delta intensity, stratification
+# in Python ordering - where column 0 is the first, column 1 is the second etc.
+# Note: stratification = -1 means no stratification column is loaded (and so the data is assumed unstratified)
+File_format 2 3 4 5 -1
+# RJMCMC parameters
+Burn_in 50000
+Nsamples  5050000
+# Discretistion size of the model
+model_discretisation 200
+# Chain-forming parameters:  show, thinning
+Chain_parameters 10000 100 
+# Age distribution: N = uniform, N = normal
+Age_distribution N 
+# Running mode: 1 - normal, 0 - set all likelihoods to 1 to recover the prior distributions.
+running_mode 0
+# Age Min and Max for model parametrisation
+Age_bounds -3200  2300  
+# Parameters that describe the various model perturbations:
+# sigma_move, sigma_change, sigma_birth
+Sigmas 500 60 8
+# Fraction of ages to change in a proposal (i.e. 20 means that 1/20 of them will change)
+Age_frac 30.0
+#
+# --------
+# Prior information
+# --------
+#  Intensities: I_min, I_max in micro Tesla
+Intensity_prior 10 100 
+# Number of change points: K_min, K_max
+Num_change_points 1 100
+#
+# --------
+# Outputs
+# --------
+# Directory for all outputs:
+Outputs_directory Outputs_Hawaii_prior_sampling
+# Credible interval or any non-positive number for none.
+Credible 95
+# Number of bins for posterior marginals:
+Nbins 200
+# Name and write frequency of model file. The line below causes the code to write every 100th model to "models.dat". Enter a frequency of -1 for no output. 
+output_model models.dat 50
+# Joint distribution output: if frequency is -1 then nothing is output; otherwise this defines the frequency
+output_joint_distribution_freq 5
+# -------------------------------------------------------
+# Additional (optional) information
+# -------------------------------------------------------
+#
+# Plotting range of intensity
+Plotting_intensity_range 10 100
