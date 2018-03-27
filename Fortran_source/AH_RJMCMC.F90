@@ -1,11 +1,9 @@
 PROGRAM Main_Age_Uncertain_RJMCMC
 !
-!  This program uses a RJMCMC algorithm to sample the model: comprising unknown ages and the data fit.
-! It then marginalises to find the posterior of all variables of interest.
+! This program uses the AH-RJMCMC algorithm to sample the posterior distribution of intensity and data ages.
 
-! Phil Livermore / Alex Fournier, Apr 2016
+! Authors: Phil Livermore, Alex Fournier, Thomas Bodin, March 27 2018
 ! 
-! Jan 2017: adapted to conform to same inputfile as Python code
 !
 
 USE AGE_HYPERPARAMETER_RJMCMC

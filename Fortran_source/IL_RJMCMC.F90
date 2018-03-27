@@ -1,9 +1,7 @@
 PROGRAM Integrated_Likelihood_RJMCMC
 !
-!  This program uses a RJMCMC algorithm to sample the model using an integrated likelihood (Sambridge, 2016).
-! It then marginalises to find the posterior of all variables of interest.
-
-! Phil Livermore, July 2016
+! This program uses the IL-RJMCMC algorithm to sample the posterior distribution of intensity and data ages.
+! Authors: Phil Livermore, Alex Fournier, Thomas Bodin, March 27 2018
 ! 
 !
 
