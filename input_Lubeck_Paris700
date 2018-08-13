@@ -55,3 +55,4 @@ output_joint_distribution_freq 1
 #
 # Plotting range of intensity
 Plotting_intensity_range 35 75
+data_title Lubeck-Paris700

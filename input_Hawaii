@@ -44,7 +44,7 @@ Outputs_directory Outputs_Hawaii
 Credible 95
 # Number of bins for posterior marginals:
 Nbins 200
-# Name and write frequency of model file. The line below causes the code to write every nth model (after thinning) to the models file here "models.dat". Enter a frequency of -1 for no output.
+# Name and write frequency of model file. The line below causes the code to write every 100th model to "models.dat". Enter a frequency of -1 for no output. 
 output_model models.dat 50
 # Joint distribution output: if frequency is -1 then nothing is output; otherwise this defines the frequency
 output_joint_distribution_freq 5
@@ -54,3 +54,4 @@ output_joint_distribution_freq 5
 #
 # Plotting range of intensity
 Plotting_intensity_range 10 100
+data_title Hawaii

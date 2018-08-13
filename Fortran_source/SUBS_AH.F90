@@ -45,12 +45,12 @@ CHARACTER(1) :: AGE_DISTRIBUTION
 INTEGER, ALLOCATABLE :: ORDER(:)
 REAL( KIND = 8) :: ENDPT_BEST(2), age_frac, credible
 
-INTEGER :: b, bb, AB, AD, PD, PB, ACV, PCV, AP, PP, PA, AA, num_age_changes, STRATIFIED(:)
+INTEGER :: b, bb, AB, AD, PD, PB, ACV, PCV, AP, PP, PA, AA, num_age_changes, STRATIFIED(:),misfit_count
 REAL( KIND = 8) :: MIDPOINT_AGE(:), DELTA_AGE(:), Intensity(:), I_sd(:), ENDPT(2), ENDPT_PROP(2), like, like_best, like_init
 REAL( KIND = 8), ALLOCATABLE :: VAL_MIN(:), VAL_MAX(:),   MINI(:,:), MAXI(:,:), PT(:,:), PT_PROP(:,:), interpolated_signal(:), X(:), PT_NEW(:), PT_BEST(:,:), age(:), age_prop(:)
 INTEGER, ALLOCATABLE, DIMENSION(:) :: IND_MIN, IND_MAX
 INTEGER, ALLOCATABLE :: discrete_history(:,:)
-LOGICAL :: CALC_CREDIBLE
+LOGICAL :: CALC_CREDIBLE, AGES_FIXED
 
 !needed to write to files in row format:
 WRITE(format_descriptor,'(A,i3,A)') '(',discretise_size,'F14.4)'
@@ -115,6 +115,7 @@ MINI(:,:) = 0.
 MAXI(:,:) = 0.
 pt(:,:) = 0.
 b = 0 
+misfit_count=0
 bb = 0
 AB=0
 AD=0
@@ -141,9 +142,10 @@ PRINT*,'MIN INTENSITY ERROR IS 0, INCOMPATITBLE WITH ASSUMPTIONS BUILT INTO CODE
 STOP
 ENDIF
 
+AGES_FIXED = .FALSE.
 IF(MINVAL( DELTA_AGE(1:NUM_DATA)) .eq. 0.0_8) THEN
-PRINT*,'MIN AGE ERROR IS 0, INCOMPATITBLE WITH ASSUMPTIONS BUILT INTO CODE'
-STOP
+PRINT*,'MIN AGE ERROR IS 0, ASSUMING AGES ARE FIXED'
+AGES_FIXED = .TRUE.
 ENDIF
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -395,6 +397,8 @@ endif
 else !every 3rd iteration change the ages
 !select an age at random between 1 and NUM_DATA
 
+! Never accept a model with perturbed ages if we assume the ages are fixed.
+IF (AGES_FIXED) OUT = 0
 
 if (s>burn_in) PA=PA+1
 num_age_changes = floor(NUM_DATA/age_frac)
@@ -529,7 +533,13 @@ RETURN_INFO%AV(:)=RETURN_INFO%AV(:)+interpolated_signal(1:discretise_size)
 
 
 ! build marginal distribution for ages:
+
 DO i=1,NUM_DATA
+
+IF( AGES_FIXED) THEN
+    BIN_INDEX = 1
+ELSE
+
 IF( AGE_DISTRIBUTION(1:1) == 'U' .OR. AGE_DISTRIBUTION(1:1) == 'u') THEN
 BIN_INDEX = FLOOR( (age(i)-(MIDPOINT_AGE(i)-DELTA_AGE(i)))/DELTA_AGE(i)/2.0_8 * NBINS ) + 1
 ELSE
@@ -539,8 +549,10 @@ BIN_INDEX = FLOOR( (age(i)-(MIDPOINT_AGE(i)-2.0_8 * DELTA_AGE(i)))/DELTA_AGE(i)/
 IF( BIN_INDEX < 1) BIN_INDEX = 1
 IF( BIN_INDEX > NBINS ) BIN_INDEX = NBINS
 ENDIF
-if(BIN_INDEX < 0) then; print*, i, age(i), MIDPOINT_AGE(i), DELTA_AGE(i), nbins; stop; endif
+if(BIN_INDEX < 0) then; print*, 'BIN_INDEX < 0', i, age(i), MIDPOINT_AGE(i), DELTA_AGE(i), nbins; stop; endif
 RETURN_INFO%MARGINAL_AGES(BIN_INDEX,i) = RETURN_INFO%MARGINAL_AGES(BIN_INDEX,i) + 1
+ENDIF
+
 enddo
 
 
@@ -615,7 +627,11 @@ val_max(i) = MAXVAL(MINI(i,:) ); ind_max(i:i) = MAXLOC( MINI(i,:) )
 
     endif !if burn-in
     
-    RETURN_INFO%convergence(s)=like  ! Convergence of the misfit
+ if ( mod(s,thin)==0) THEN 
+ misfit_count = misfit_count + 1
+ RETURN_INFO%convergence(misfit_count)=like  ! Convergence of the misfit
+ endif
+
     
     ! Get the best model
     if (like<like_best) then

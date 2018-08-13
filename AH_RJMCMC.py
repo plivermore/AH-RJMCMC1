@@ -3,6 +3,11 @@ import numpy as np
 import RJMCMC_inversion
 import os
 
+# AH-RJMCMC code
+# Written by Phil Livermore, Alex Fournier, Thomas Bodin
+# March 27, 2018
+#
+
 if len(sys.argv) != 2:
     print("Syntax: python AH_RJMCMC.py <inputfile>")
     sys.exit(0)

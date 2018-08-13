@@ -97,8 +97,12 @@ print('Min/Max value of age from joint distribution are: ' + str(dist[:,0].min()
 print('Min/Max value of age from Prior distribution are: ' + str(noisy_pt[0]-errs[0]) + ' ' + str(noisy_pt[0]+errs[0]) )
 
 g.ax_joint.set_ylabel('Intensity/$\mu$T')
-g.ax_joint.set_xlabel('Age/yr')
+g.ax_joint.set_xlabel('Time/yr')
 g.ax_joint.legend(loc='lower center')
+
+# Not quite working...
+#cax = g.fig.add_axes([.98, .4, .01, .2])
+#plt.colorbar(cax=cax)
 
 g.savefig('Joint'+str('{:04}'.format(index)) + 'hex.pdf')
 

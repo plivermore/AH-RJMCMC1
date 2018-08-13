@@ -1,9 +1,11 @@
 PROGRAM Main_Age_Uncertain_RJMCMC
 !
-! This program uses the AH-RJMCMC algorithm to sample the posterior distribution of intensity and data ages.
+!  This program uses a RJMCMC algorithm to sample the model: comprising unknown ages and the data fit.
+! It then marginalises to find the posterior of all variables of interest.
 
-! Authors: Phil Livermore, Alex Fournier, Thomas Bodin, March 27 2018
+! Phil Livermore / Alex Fournier, Apr 2016
 ! 
+! Jan 2017: adapted to conform to same inputfile as Python code
 !
 
 USE AGE_HYPERPARAMETER_RJMCMC
@@ -143,8 +145,8 @@ NUM=ceiling((nsample-burn_in)*(100-credible)/200.0_8/thin) ! number of collected
 ALLOCATE( X(1: discretise_size) )
 ALLOCATE( RETURN_INFO%AV(1:discretise_size), RETURN_INFO%BEST(1:discretise_size),  &
           RETURN_INFO%INF(1:discretise_size), RETURN_INFO%sup(1:discretise_size), &
-          RETURN_INFO%change_points(nsample * k_max_array_bound), RETURN_INFO%n_changepoint_hist(k_max_array_bound), &
-          RETURN_INFO%convergence(nsample * k_max_array_bound), &
+          RETURN_INFO%change_points((nsample-burn_in)/thin * k_max_array_bound), RETURN_INFO%n_changepoint_hist(k_max_array_bound), &
+          RETURN_INFO%convergence(nsample/thin), &
           RETURN_INFO%MARGINAL_AGES(1:NBINS,1:NUM_DATA)    )
 
 ALLOCATE( RETURN_INFO%MEDIAN(1:discretise_size), RETURN_INFO%MODE(1:discretise_size), &
@@ -247,8 +249,8 @@ CLOSE(24)
 
 
 OPEN(24, FILE = TRIM(Outputs_directory)//'/misfit.dat', STATUS = 'REPLACE', FORM = 'FORMATTED')
-DO i=1, nsample, 100
-WRITE(24,'(i,X,F10.3)') i, RETURN_INFO%convergence(i)
+DO i=1, nsample/thin, 10
+WRITE(24,'(i,X,F10.3)') (i*thin), RETURN_INFO%convergence(i)
 enddo
 CLOSE(24)
 

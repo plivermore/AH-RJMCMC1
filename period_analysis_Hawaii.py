@@ -179,7 +179,7 @@ plt.close(fig3)
 
 # Make plot of PSD maxima:
 fig2, ax2 = plt.subplots( figsize=(8,5))
-ax2.hist(peak_psd_period,bins=20,color='blue', edgecolor='white',range=[100,400], normed=True,alpha=0.6)
+ax2.hist(peak_psd_period,bins=20,color='blue', edgecolor='white',range=[100,400], density=True,alpha=0.6)
 
 # Fit a normal distribution to the data:
 mu, std = norm.fit(peak_psd_period)

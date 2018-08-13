@@ -1,8 +1,8 @@
 # --------
 # Input file 
 # --------
-# Data_file Paris700.txt
-Data_file archeomagnetic_data/Paris700.txt
+# Data_file 
+Data_file archeomagnetic_data/Paris700_no_age_errors_min_5muT.txt
 #
 # Column format for datafile, in the order age, delta age, intensity, delta intensity, stratification
 # in Python ordering - where column 0 is the first, column 1 is the second etc.
@@ -39,7 +39,7 @@ Num_change_points 1 50
 # Outputs
 # --------
 # Directory for all outputs:
-Outputs_directory Outputs_Paris700
+Outputs_directory Outputs_Paris700_no_age_errors_min_5muT
 # Credible interval or any non-positive number for none.
 Credible 95
 # Number of bins for posterior marginals:
@@ -48,5 +48,3 @@ Nbins 200
 output_model models.dat 10
 # Joint distribution output: if frequency is -1 then nothing is output; otherwise this defines the frequency
 output_joint_distribution_freq 1
-# Optional arguments
-data_title Paris700

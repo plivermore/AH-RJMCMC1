@@ -179,7 +179,7 @@ plt.close(fig3)
 fig2, ax2 = plt.subplots( figsize=(8,5))
 j = 0
 peak_psd_period = [ peak_psd_period[j] for j in range(0,len(peak_psd_period)) if peak_psd_period[j] <= 300 and peak_psd_period[j] >= 200]
-ax2.hist(peak_psd_period,bins=20,color='blue', edgecolor='white',range=[200,300], normed=True,alpha=0.6)
+ax2.hist(peak_psd_period,bins=20,color='blue', edgecolor='white',range=[200,300], density=True,alpha=0.6)
 
 # Fit a normal distribution to the data:
 mu, std = norm.fit(peak_psd_period)
