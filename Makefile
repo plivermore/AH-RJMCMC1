@@ -1,5 +1,8 @@
+#Choose your favourite Fortran90 compiler here:
 F90=ifort
 #F90=gfortran -ffree-line-length-0
+
+
 source=Fortran_source
 
 all : IL AH

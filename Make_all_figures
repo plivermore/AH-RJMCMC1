@@ -108,3 +108,18 @@ python make_age_sampling_comparison.py
 cd Outputs_Tema_etal_2017_dataset
 python ../make_Posterior_with_shifted_ages.py
 cd ..
+
+$Run_command input_Herve_etal_2017 > Screen_output_Herve_etal_2017
+
+cd Comparisons/Herve_2017_comparison
+python make_Herve_comparison.py
+cd ..
+
+cd Comparisons/LeGoff_Paris700_comparison
+python make_Paris700_comparison_plot.py
+cd ..
+
+cd Comparisons/Tema_etal_2017_comparison/
+python make_Tema_comparison.py
+cd ..
+

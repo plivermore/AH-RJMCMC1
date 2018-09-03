@@ -48,13 +48,13 @@ best_x, best_y = np.loadtxt(RJMCMC_source+'best_fit.dat', unpack=True)
 print('Building comparison plot ...')
 fig2, ax = plt.subplots (figsize=(14,5))
 
-ax.fill_between(lx, ly, uy, facecolor='orange', alpha=0.5, edgecolor='g', label='%i%% credible interval' % credible)
+ax.fill_between(lx, ly, uy, facecolor='orange', alpha=0.5, edgecolor='g', label='%i%% AH-RJMCMC credible interval' % credible)
 
 #a.errorbar(dx[black_pts_index], dy[black_pts_index],xerr=dx_err[black_pts_index], yerr=dn[black_pts_index],fmt='k.', label='Data', elinewidth=0.5)
 
 (line, caps, bars) = ax.errorbar(x, y,xerr=x_err, yerr=y_err,fmt='o',color='k',ecolor='k', elinewidth=1, capthick=0.7, capsize=4, markersize=5)
 plt.setp(line,label="Data") #give label to returned line
-ax.plot(av_x, av_y, 'r', label = 'Average RJMCMC posterior', linewidth=2)
+ax.plot(av_x, av_y, 'r', label = 'Average AH-RJMCMC posterior', linewidth=2)
 #ax.plot(best_x, best_y, 'b', linewidth=2, label = 'Best fit')
 #ax.plot(median_x, median_y, 'purple', linewidth=2, label = 'Median')
 #ax.plot(mode_x, mode_y, 'blue', linewidth=2, label = 'Mode')
@@ -63,15 +63,15 @@ ax.plot(av_x, av_y, 'r', label = 'Average RJMCMC posterior', linewidth=2)
 x_Herve, y_Herve, y_err  = np.loadtxt('Table2.txt', unpack=True)
 uy_Herve, ly_Herve = y_Herve + y_err,  y_Herve - y_err
 
-ax.fill_between(x_Herve, ly_Herve, uy_Herve, facecolor='grey', alpha=0.5, edgecolor='g', label=r'$Herv\acute{e}$ et al. (2017) 95%')
-ax.plot(x_Herve, y_Herve, 'b', label = r'Average $Herv\acute{e}$ et al. (2017)', linewidth=2)
+ax.fill_between(x_Herve, ly_Herve, uy_Herve, facecolor='grey', alpha=0.5, edgecolor='g', label=r'95% $Herv\acute{e}$ et al. (2017) credible interval')
+ax.plot(x_Herve, y_Herve, 'b', label = r'Average $Herv\acute{e}$ et al. (2017) posterior', linewidth=2)
 
 ax.set_ylim(I_min,I_max)
 ax.set_xlim(age_min, age_max)
 ax.set_title(r'Time dependence of intensity: dataset of $Herv\acute{e}$ et al. (2017)',fontsize=20)
-ax.set_xlabel('Age/yr',fontsize=16)
+ax.set_xlabel('Time/yr',fontsize=16)
 ax.set_ylabel('Intensity/$\mu$T',fontsize=16)
-ax.legend(loc = 'upper right',fontsize=12,labelspacing=0.2)
+ax.legend(loc = 'upper left',fontsize=12,labelspacing=0.2)
 ax.xaxis.set_tick_params(labelsize=16)
 ax.yaxis.set_tick_params(labelsize=16)
 plt.savefig('Herve_dataset_comparison.pdf', bbox_inches='tight',pad_inches=0.4)
