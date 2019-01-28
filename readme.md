@@ -1,12 +1,12 @@
 # Documentation for the AH-RJMCMC code 
 ## (Age-Hyperparameter Reverse-jump Markov Chain Monte Carlo)
 
-Version 1: March 27th 2018  
+**Version 1: March 27th 2018**  
 
 Original release; produces the figures in the paper 
 https://academic.oup.com/gji/article/215/3/2008/5101441.
 
-Version 2: Revised Jan 28th 2019
+**Version 2: Revised Jan 28th 2019**
 
 Includes:  sampling of the ages from a normal distribution based on their current values, rather than directly from the prior. This speeds up convergence.
 Increased flexibility in the type of data that can be read, including data files describing samples whose ages are a mixture of normal and uniform distributions; data types (in particular, brick samples with the same sample ID are not independent and are always defined with the same age); stratification of data.
@@ -22,8 +22,6 @@ Maintained by Phil Livermore
 ## Overview
 
 AH-RJMCMC is an open-source Fortran code that computes a transdimensional posterior probability distribution of archeomagnetic intensity as a function of time.
-This version is an update to version 1, and is published all input and data files required to reproduce the figures in the journal article 
-https://academic.oup.com/gji/article/215/3/2008/5101441. 
 
 For speed, the main program is coded in Fortran 90; graphics are produced using Python (version 3).
 
