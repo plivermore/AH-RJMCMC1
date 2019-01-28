@@ -1,5 +1,5 @@
 # Documentation for the AH-RJMCMC code 
-##(Age-Hyperparameter Reverse-jump Markov Chain Monte Carlo)
+## (Age-Hyperparameter Reverse-jump Markov Chain Monte Carlo)
 
 Version 1: March 27th 2018  
 
@@ -165,31 +165,31 @@ sigma\_age: the standard deviation in age when proposing an alteration in the sa
 ### Age_frac: fraction of ages to change in a proposal 
 (defined as the parameter beta in the manuscript referenced above).
 
-###Intensity\_prior: 
+### Intensity\_prior: 
 min/max bounds on the assumed uniformly distributed intensity prior for vertices: 
 I\_min, I\_max in micro Tesla
 
 ### Num\_change\_points: K\_min, K\_max 
 Number of internal vertices is bounded to be within the interval [K\_min, K\_max]
 
-###Outputs\_directory: Directory for all outputs
+### Outputs\_directory: Directory for all outputs
 This directory is created if it does not exist
 
-###Credible: Credible interval 
+### Credible: Credible interval 
 e.g. 95 (for 95% credible interval) or any non-positive number for none
 
 ### Nbins: Number of bins for posterior marginals
 
-###output\_model: Name and write frequency of model files. 
+### output\_model: Name and write frequency of model files. 
 Enter a frequency of -1 for no models to be output.
 For example, the line below causes the code to write every 10th model (after thinning) to the models file here "models.dat". 
 
 `output_model models.dat 10`
 
-###output\_joint\_distribution\_freq: Joint distribution output frequency
+### output\_joint\_distribution\_freq: Joint distribution output frequency
 If frequency is -1 then nothing is output; otherwise this defines the frequency of the joint distribution after thinning.
 
-###Optional parameters:
+### Optional parameters:
 True_data:  relative path of "true" underlying evolution
 If this is present, some of the plotting code will add this data to figures.
 
