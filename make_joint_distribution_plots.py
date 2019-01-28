@@ -28,7 +28,7 @@ for line in open('input_file'):
         if line.split()[0].upper() == 'Data_file'.upper():
             Data_filename = line.split()[1].rstrip();
         if line.split()[0].upper() == 'File_format'.upper():
-            age_col, d_age_col, F_col, dF_col, Strat_col = int(line.split()[1]),int(line.split()[2]),int(line.split()[3]),int(line.split()[4]), int(line.split()[5])
+            id, age_col, d_age_col, F_col, dF_col, Strat_col = int(line.split()[1]),int(line.split()[2]),int(line.split()[3]),int(line.split()[4]), int(line.split()[5]), int(line.split()[6])
         if line.split()[0].upper() == 'Intensity_prior'.upper():
             I_min,I_max =  float(line.split()[1]),float(line.split()[2])
         if line.split()[0].upper() == 'True_data'.upper():
@@ -50,7 +50,7 @@ print("Making joint plot for sample " + str(index))
 data = np.loadtxt(filename,usecols=(age_col, d_age_col, F_col, dF_col), unpack=False, comments='#')
 noisy_pt = [data[index-1,0], data[index-1,2]]
 errs = [data[index-1,1], data[index-1,3]]
-
+print(data[index-1,:])
 # load the (true) data file if available
 if 'true_behaviour_file' in locals():
     data = np.loadtxt(os.path.join(os.pardir,true_behaviour_file), usecols=(0,2))

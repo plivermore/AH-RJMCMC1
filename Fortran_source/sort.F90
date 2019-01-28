@@ -1,98 +1,64 @@
 MODULE SORT
 CONTAINS
 
-RECURSIVE SUBROUTINE quick_sort(list, order)
 
-! Quick sort routine from:
-! Brainerd, W.S., Goldberg, C.H. & Adams, J.C. (1990) "Programmer's Guide to
-! Fortran 90", McGraw-Hill  ISBN 0-07-000248-7, pages 149-150.
-! Modified by Alan Miller to include an associated integer array which gives
-! the positions of the elements in the original order.
+! Source:   https://github.com/certik/fortran-utils
+!
+! Copyright (c) 2012 Ondřej Čertík
 
-IMPLICIT NONE
-REAL(KIND =  8), DIMENSION (:), INTENT(IN OUT)  :: list
-INTEGER, DIMENSION (:), INTENT(OUT)  :: order
-
-! Local variable
-INTEGER :: i
-
-DO i = 1, SIZE(list)
-  order(i) = i
-END DO
-
-CALL quick_sort_1(1, SIZE(list))
-
-CONTAINS
-
-RECURSIVE SUBROUTINE quick_sort_1(left_end, right_end)
-
-INTEGER, INTENT(IN) :: left_end, right_end
-
-!     Local variables
-INTEGER             :: i, j, itemp
-REAL(KIND = 8)                :: reference, temp
-INTEGER, PARAMETER  :: max_simple_sort_size = 6
-
-IF (right_end < left_end + max_simple_sort_size) THEN
-  ! Use interchange sort for small lists
-  CALL interchange_sort(left_end, right_end)
-
-ELSE
-  ! Use partition ("quick") sort
-  reference = list((left_end + right_end)/2)
-  i = left_end - 1; j = right_end + 1
-
-  DO
-    ! Scan list from left end until element >= reference is found
-    DO
-      i = i + 1
-      IF (list(i) >= reference) EXIT
-    END DO
-    ! Scan list from right end until element <= reference is found
-    DO
-      j = j - 1
-      IF (list(j) <= reference) EXIT
-    END DO
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+!of this software and associated documentation files (the "Software"), to deal
+!in the Software without restriction, including without limitation the rights
+!to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+!copies of the Software, and to permit persons to whom the Software is
+!furnished to do so, subject to the following conditions:
+!
+!The above copyright notice and this permission notice shall be included in
+!all copies or substantial portions of the Software.
+!
+!THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+!IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+!FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+!AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+!LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+!OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+!THE SOFTWARE.
 
 
-    IF (i < j) THEN
-      ! Swap two out-of-order elements
-      temp = list(i); list(i) = list(j); list(j) = temp
-      itemp = order(i); order(i) = order(j); order(j) = itemp
-    ELSE IF (i == j) THEN
-      i = i + 1
-      EXIT
-    ELSE
-      EXIT
-    END IF
-  END DO
+function rargsort(a) result(b)
+! Returns the indices that would sort an array.
+!
+! Arguments
+! ---------
+!
+real(kind = 8), intent(in):: a(:)   ! array of numbers
+integer :: b(size(a))         ! indices into the array 'a' that sort it
+!
+! Example
+! -------
+!
+! rargsort([4.1_dp, 2.1_dp, 2.05_dp, -1.5_dp, 4.2_dp]) ! Returns [4, 3, 2, 1, 5]
 
-  IF (left_end < j) CALL quick_sort_1(left_end, j)
-  IF (i < right_end) CALL quick_sort_1(i, right_end)
-END IF
+integer :: N                           ! number of numbers/vectors
+integer :: i,imin                      ! indices: i, i of smallest
+integer :: temp1                       ! temporary
+real(kind = 8) :: temp2
+real(kind = 8) :: a2(size(a))
+a2 = a
+N=size(a)
+do i = 1, N
+b(i) = i
+end do
+do i = 1, N-1
+! find ith smallest in 'a'
+imin = minloc(a2(i:),1) + i - 1
+! swap to position i in 'a' and 'b', if not already there
+if (imin /= i) then
+temp2 = a2(i); a2(i) = a2(imin); a2(imin) = temp2
+temp1 = b(i); b(i) = b(imin); b(imin) = temp1
+end if
+end do
+end function
 
-END SUBROUTINE quick_sort_1
-
-
-SUBROUTINE interchange_sort(left_end, right_end)
-
-INTEGER, INTENT(IN) :: left_end, right_end
-
-!     Local variables
-INTEGER             :: i, j, itemp
-REAL(KIND = 8)                :: temp
-
-DO i = left_end, right_end - 1
-  DO j = i+1, right_end
-    IF (list(i) > list(j)) THEN
-      temp = list(i); list(i) = list(j); list(j) = temp
-      itemp = order(i); order(i) = order(j); order(j) = itemp
-    END IF
-  END DO
-END DO
-
-END SUBROUTINE interchange_sort
-
-END SUBROUTINE quick_sort
 
 END MODULE SORT

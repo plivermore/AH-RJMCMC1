@@ -1,9 +1,8 @@
 # Script to make a Posterior plot with shifted ages from the RJ-MCMC output
-
+import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
 import matplotlib.cm as cm
-import numpy as np
 from scipy import stats
 from matplotlib.colors import LogNorm
 import os

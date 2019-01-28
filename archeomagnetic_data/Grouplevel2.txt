@@ -1,0 +1,80 @@
+# All ages are BC
+# 
+# Level: fragment, group of fragments, structure (frag., group, struct.)
+# Type: type of artifact (Pottery, Brick, Baked Clay, Slag)
+# Sampling: age distribution (Uniform, Gaussian)
+# 2 last columns:
+# when 0 0: no stratification at all
+# when 0 1: fragments within a layer with no stratification in between, but with a stratification between the layers
+# 
+# 
+#  Ref     level  Type       age       dt      Int       sd  distribution  strat.
+# 
+hz05 group P -766.0 34.0000 79.8000 7.6000 U 0 
+hz06 group P -766.0 34.0000 73.5000 5.2000 U 0 
+hz07 group P -850.0 50.0000 68.9000 7.4000 U 0 
+hz10 group P -1000.0 50.0000 70.7000 7.0000 U 0 
+hz11 group P -1050.0 50.0000 64.2000 4.8000 U 0 
+hz13 group P -1300.0 50.0000 59.1000 2.6000 U 0 
+mgf10 group P -1450.0 50.0000 51.9000 1.4000 U 0 
+mgf13 group P -1800.0 100.000 42.8000 2.3000 U 0 
+mgh03 group P -766.0 34.0000 84.5000 7.7000 U 0 
+mgh09 group P -1000.0 50.0000 76.6000 8.5000 U 0 
+mgk06 group P -1155.0 25.0000 64.6000 2.6000 U 0 
+mgk08 group P -1250.0 50.0000 60.6000 3.1000 U 0 
+s1s84 group S -1032.5 2.25 80.1900 2.7000 N 1 
+s1s71 group S -1017.5 5.25 72.9000 2.6000 N 2 
+s1s53 group S -998.5 4.25 77.4800 3.6000 N 3 
+s1s47 group S -980.5 4.75 85.3600 12.320 N 4 
+s1s44 group S -963.0 4.0 79.1500 7.3500 N 5 
+s1s33 group S -947.0 4.0 74.8200 2.6500 N 6 
+s1s19 group S -934.5 2.25 80.6400 6.1100 N 7 
+s1s12 group S -921.5 4.25 72.4200 2.8600 N 8 
+s1s3 group S -904.0 4.5 73.1000 5.0000 N 9 
+jh03a group P -716.5 15.5000 76.6000 9.9000 U 0 
+jh15d group P -675.5 25.5000 74.1000 7.5000 U 0 
+jh24a group P -702.5 1.50000 75.3000 4.4000 U 0 
+jh55a group P -553.0 33.0000 68.2000 2.2000 U 0 
+jh58b group P -460.0 60.0000 73.2000 3.7000 U 0 
+jh59l group P -300.0 100.000 68.1000 5.5000 U 0 
+jh62a group P -150.0 10.0000 56.3000 3.0000 U 0 
+SY01 group P -730.0 10.0000 72.4000 2.70000 U 0 
+SY99 group P -1450.0 100.000 61.1000 1.30000 U 0 
+SY03 group P -730.0 10.0000 78.3000 3.20000 U 0 
+SY52 group P -1900.0 100.000 43.5000 1.80000 U 0 
+SY79 group P -1775.0 25.0000 41.1000 4.40000 U 0 
+SY78 group P -1725.0 25.0000 41.1000 2.0000 U 0 
+SY50 group P -1600.0 25.0000 47.0000 2.80000 U 0 
+SY51 group P -1600.0 25.0000 50.1000 2.00000 U 0 
+SY49 group P -1475.0 75.0000 57.7000 2.20000 U 0 
+SY36 group B -2050.0 100.000 47.2000 1.80000 U 0 
+SY29 group B -2000.0 100.000 47.6000 2.20000 U 0 
+SY33 group B -2000.0 100.000 49.3000 1.70000 U 0 
+SY47 group P -1950.0 50.0000 48.0000 2.30000 U 0 
+SY26 group B -1825.0 75.0000 41.0000 0.90000 U 0 
+SY31 group B -1825.0 75.0000 38.4000 2.70000 U 0 
+SY16 group P -1825.0 75.0000 42.5000 2.60000 U 0 
+SY17 group P -1825.0 75.0000 43.8000 2.50000 U 0 
+SY48 group P -1600.0 25.0000 52.9000 5.40000 U 0 
+MR02 group B -2000.0 100.000 46.9000 2.30000 U 0 
+MR11 group B -1750.0 100.000 42.9000 1.40000 U 0 
+Lot05 group P -1150.0 50.0000 59.4000 3.70000 U 0 
+TM01 group B -725.0 25.0000 71.6000 3.20000 U 0 
+Lot25 group B -1775.0 25.0000 38.1000 2.30000 U 0 
+Lot26 group B -1625.0 125.000 40.6000 1.00000 U 0 
+MR15 group B -2000.0 100.000 45.9000 1.50000 U 0 
+MR08 group B -1750.0 100.000 43.4000 0.90000 U 0 
+Lot27 group P -1250.0 50.0000 56.2000 3.50000 U 0 
+Lot28 group P -725.0 25.0000 73.5000 2.50000 U 0 
+Lot29 group P -650.0 50.0000 74.9000 1.90000 U 0 
+Lot31 group P -575.0 25.0000 69.1000 0.90000 U 0 
+Lot09 group P -1625.0 125.000 50.8000 3.90000 U 0 
+Lot19 group P -225.0 75.0000 57.3000 2.60000 U 0 
+AT1 struct. C -1050.0 150.000 96.2050 7.01000 U 0 
+KA1 struct. C -1765.0 65.0000 55.2211 1.35000 U 0 
+KT1 struct. C -1750.0 20.0000 56.5670 1.92000 U 0 
+KT3 struct. C -1892.5 57.5000 54.8866 12.1800 U 0 
+KT4 struct. C -1892.5 57.5000 51.9053 4.26000 U 0 
+KT5 struct. C -1892.5 57.5000 48.8767 7.19000 U 0 
+KT8 struct. C -1892.5 57.5000 51.5635 1.75000 U 0 
+KT13 struct. C -1892.5 57.5000 51.1838 5.10000 U 0 

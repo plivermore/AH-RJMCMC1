@@ -1,9 +1,8 @@
 # Script to make plots from the RJ-MCMC output
 
-import matplotlib.pyplot as plt
-import matplotlib.mlab as mlab
-import matplotlib.cm as cm
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 from scipy import stats
 from matplotlib.colors import LogNorm
 import os
@@ -42,8 +41,6 @@ for line in open('input_file','r'):
             Burn_in = int(line.split()[1])
         if line.split()[0].upper() == 'Outputs_directory'.upper():
             outputs_directory = line.split()[1]
-        if line.split()[0].upper() == 'Data_title'.upper():
-                data_title = line.split()[1]
 # read in the various data files that were output by the RJ-MCMC script
 
 x, x_err, y, y_err, strat = np.loadtxt('data.dat', unpack=True)
@@ -63,7 +60,7 @@ num_bins = 20
 fig1, ax1 = plt.subplots(figsize=(14,6))
 
 unstratified_index = [index for index,item in enumerate(strat) if item == 0]
-stratified_index = [index for index,item in enumerate(strat) if item == 1]
+stratified_index = [index for index,item in enumerate(strat) if item > 0]
 
 if len(unstratified_index) > 0:
     (line, caps, bars) = ax1.errorbar(x[unstratified_index], y[unstratified_index],xerr=x_err[unstratified_index], yerr=y_err[unstratified_index],
@@ -92,12 +89,6 @@ for tl in ax2.get_yticklabels():
 ax1.set_xlim(age_min, age_max)
 ax2.yaxis.set_tick_params(labelsize=16)
 
-if 'data_title' in locals(): #check to see if data_title is specified in input file
-    if data_title.upper() == 'Lubeck-Paris700'.upper():
-        ax2.set_title(r"""$L\"ubeck$-Paris700""",fontsize=20);
-    else:
-        ax2.set_title(data_title,fontsize=20)
-
 plt.savefig('Data.pdf', bbox_inches='tight',pad_inches=0.0)
 plt.close(fig1)
 
@@ -125,9 +116,9 @@ if 'x_cts_true' in locals():  #see if "true" data are available to plot --- only
 ax.set_ylim(I_min,I_max)
 ax.set_xlim(age_min, age_max)
 ax.set_title('Posterior distribution of intensity',fontsize=20)
-ax.set_xlabel('Time/yr',fontsize=16)
+ax.set_xlabel('Age/yr',fontsize=16)
 ax.set_ylabel('Intensity/$\mu$T',fontsize=16)
-ax.legend(loc = 'upper right',fontsize=12,labelspacing=0.2)
+ax.legend(loc = 'lower right',fontsize=12,labelspacing=0.2)
 ax.xaxis.set_tick_params(labelsize=16)
 ax.yaxis.set_tick_params(labelsize=16)
 plt.savefig('Posterior.pdf', bbox_inches='tight',pad_inches=0.4)
@@ -156,7 +147,7 @@ vertices = np.loadtxt('changepoints.dat')
 fig4, ax = plt.subplots (figsize=(14,3))
 ax.hist(vertices, bins = num_bins)
 ax.set_title('Vertex position Histogram',fontsize=20)
-ax.set_xlabel('Time/yr',fontsize=16)
+ax.set_xlabel('Age/yr',fontsize=16)
 ax.set_ylabel('Count',fontsize=16)
 ax.set_xlim(age_min, age_max)
 ax.xaxis.set_tick_params(labelsize=16)
@@ -183,11 +174,23 @@ plt.savefig('Misfit.pdf', bbox_inches='tight',pad_inches=0.4)
 plt.close(fig5)
 
 # Make a plot of the density
+threshold = 0.01
 print('Building plot of density...')
 fig6, ax = plt.subplots ( figsize=(14,5))
 
-ax.set_title('Intensity density')
+ax.set_title('Intensity density',fontsize=18)
 ax.set_ylabel('Intensity/$\mu$T')
+#f = open('intensity_density.dat', 'r')
+#discretise_size, NBINS = [int(x) for x in f.readline().split()]
+#density_data =  [list(map(float, x.split())) for x in f.readlines()]
+#f.close()
+#x_density,y_density,intensity_density = list(zip(*density_data))
+#int_density = np.reshape(intensity_density,[discretise_size,NBINS])
+#x_density = np.reshape(x_density,[discretise_size,NBINS])
+#y_density = np.reshape(y_density,[discretise_size,NBINS])
+#int_density = np.transpose(int_density)
+#plt.imshow(int_density, origin='lower',cmap = cm.jet,extent=(x_density[0,0],x_density[-1,0],y_density[0,0],y_density[0,-1]), aspect='auto')
+
 f = open('intensity_density.dat', 'r')
 discretise_size, NBINS = [int(x) for x in f.readline().split()]
 density_data =  [list(map(float, x.split())) for x in f.readlines()]
@@ -196,16 +199,29 @@ x_density,y_density,intensity_density = list(zip(*density_data))
 int_density = np.reshape(intensity_density,[discretise_size,NBINS])
 x_density = np.reshape(x_density,[discretise_size,NBINS])
 y_density = np.reshape(y_density,[discretise_size,NBINS])
-int_density = np.transpose(int_density)
-plt.imshow(int_density, origin='lower',cmap = cm.jet,extent=(x_density[0,0],x_density[-1,0],y_density[0,0],y_density[0,-1]), aspect='auto')
 
-plt.xlim(x_density[0,0],x_density[-1,0])
-plt.ylim(y_density[0,0],y_density[0,-1])
-plt.xlabel('Time/yr',fontsize=16)
+int_density = np.transpose(int_density)
+x_density = np.transpose(x_density)
+y_density = np.transpose(y_density)
+int_density_refined = int_density.copy()
+
+int_density_refined[ int_density_refined < threshold] = 0.0
+
+plt.imshow(int_density_refined, origin='lower',cmap = cm.jet,extent=(x_density[0,0],x_density[0,-1],y_density[0,0],y_density[-1,0]), aspect='auto', norm=LogNorm(vmin=0.01, vmax=0.6),interpolation="nearest")
+#ax2.set_ylabel('Intensity/$\mu$T',fontsize=16)
+
+
+
+#plt.xlim(x_density[0,0],x_density[-1,0])
+#plt.ylim(y_density[0,0],y_density[0,-1])
+plt.xlabel('Age/yr',fontsize=16)
 plt.ylabel('Intensity/$\mu$T',fontsize=16)
 
-cb = plt.colorbar(ticks=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6,0.7, 0.8,0.9, 1],
-                  orientation='vertical')
+cb = plt.colorbar(ticks=[0.01, 0.1, 0.2, 0.3, 0.4, 0.5, .6],
+                  orientation='vertical', format='$%.2f$')
+
+    #cb = plt.colorbar(ticks=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6,0.7, 0.8,0.9, 1],
+#             orientation='vertical')
 cb.set_label('Probability',fontsize=16)
 #plt.clim(0, 1)
 ax.xaxis.set_tick_params(labelsize=16)
@@ -222,10 +238,10 @@ fig, ax = plt.subplots ( figsize=(8,5) )
 interp_data = np.interp(x,av_x,av_y)
 weighted_errors = (interp_data - y) / y_err
 
-n, bins, patches = plt.hist(weighted_errors,bins=50,normed=1,edgecolor='w',range=[-5,5])
+n, bins, patches = plt.hist(weighted_errors,bins=100,density=1,edgecolor='w',range=[-5,5])
 
 x_smooth = np.linspace(-5,5,1000)
-normal_distribution = mlab.normpdf(x_smooth, 0, 1)
+normal_distribution = stats.norm.pdf(x_smooth, 0, 1)
 ax.plot(x_smooth,normal_distribution,'r')
 
 ax.set_title('Weighted intensity error',fontsize=16)
@@ -243,7 +259,7 @@ plt.close(fig)
 
 # Make a 3-part joint plot
 intensity_range = 70
-threshold = 0.001
+threshold = 0.01
 print('Building composite plot...')
 plt.figure(figsize=(14,15))
 
@@ -252,7 +268,7 @@ ax1 = plt.subplot(311)
 ax1.fill_between(lx, ly, uy, facecolor='orange', alpha=0.5, edgecolor='g', label='%i%% credible interval' % credible)
 
 unstratified_index = [index for index,item in enumerate(strat) if item == 0]
-stratified_index = [index for index,item in enumerate(strat) if item == 1]
+stratified_index = [index for index,item in enumerate(strat) if item > 0]
 
 if len(unstratified_index) > 0:
     (line, caps, bars) = ax1.errorbar(x[unstratified_index], y[unstratified_index],xerr=x_err[unstratified_index], yerr=y_err[unstratified_index],
@@ -281,12 +297,7 @@ ax1.yaxis.set_tick_params(labelsize=16)
 # Make x-tick labels invisible.
 plt.setp(ax1.get_xticklabels(), visible=False)
 
-# check to see if any points are to be highlighted:
-if len(sys.argv) > 1:
-    if sys.argv[1].upper() == 'joint_highlight_points'.upper():
-        for i in range(2,len(sys.argv)):
-            print('Highlighting points in joint plot: ', x[int(sys.argv[i])-1], y[int(sys.argv[i])-1])
-            ax1.plot(x[int(sys.argv[i])-1], y[int(sys.argv[i])-1], markerfacecolor='none', color='lime',marker='s',markersize=20, markeredgewidth=2)
+
 # Part 2
 ax2 = plt.subplot(312,sharex=ax1)
 ax2.set_title('Intensity density',fontsize=20)
@@ -307,7 +318,7 @@ int_density_refined = int_density.copy()
 
 int_density_refined[ int_density_refined < threshold] = 0.0
 
-plt.imshow(int_density_refined, origin='lower',cmap = cm.jet,extent=(x_density[0,0],x_density[0,-1],y_density[0,0],y_density[-1,0]), aspect='auto', norm=LogNorm(vmin=0.001, vmax=0.6),interpolation="nearest")
+plt.imshow(int_density_refined, origin='lower',cmap = cm.jet,extent=(x_density[0,0],x_density[0,-1],y_density[0,0],y_density[-1,0]), aspect='auto', norm=LogNorm(vmin=0.01, vmax=0.6),interpolation="nearest")
 ax2.set_ylabel('Intensity/$\mu$T',fontsize=16)
 
 
@@ -370,7 +381,7 @@ if os.path.exists(priors_directory):
     plt.imshow(int_density_prior_refined, origin='lower',cmap = cm.jet,extent=(x_density_prior[0,0],x_density_prior[0,-1],y_density_prior[0,0],y_density_prior[-1,0]), aspect='auto', norm=LogNorm(vmin=0.001, vmax=0.1),interpolation="nearest")
     ax8.set_xlim(x_density_prior[0,0],x_density_prior[0,-1])
     ax8.set_ylim(y_density_prior[0,0],y_density_prior[-1,0])
-    ax8.set_xlabel('Time/yr',fontsize=16)
+    ax8.set_xlabel('Age/yr',fontsize=16)
     ax8.set_ylabel('Intensity/$\mu$T',fontsize=16)
 
     cb = plt.colorbar(ticks=[0.001, 0.002, 0.003, 0.004, 0.005, 0.006,0.007, 0.008,0.009, 0.01],orientation='vertical')
@@ -387,20 +398,20 @@ else:
             
 ax3.set_xlim(age_min, age_max)
 ax3.xaxis.set_tick_params(labelsize=16)
-ax3.set_xlabel('Time/yr',fontsize=16)
+ax3.set_xlabel('Age/yr',fontsize=16)
 ax3.xaxis.grid(True)
-ax3.tick_params(top = 'off')
+ax3.tick_params(top = False)
 ax1.xaxis.grid(True)
 ax2.xaxis.grid(True)
-ax1.tick_params(top = 'off')
-ax2.tick_params(top = 'off')
+ax1.tick_params(top = False)
+ax2.tick_params(top = False)
 
 # Adjust plot sizes to place colour bar
 plt.subplots_adjust(bottom=0.05, right=0.9, top=0.95)
-cax = plt.axes([0.91, 0.367, 0.03, 0.265])
+cax = plt.axes([0.93, 0.37, 0.03, 0.265])
 # The numbers in the square brackets of add_axes refer to [left, bottom, width, height], where the coordinates are just fractions that go from 0 to 1 of the plotting area.
-cb = plt.colorbar(ticks=[0.001,0.01, 0.1, 0.2, 0.4, .6],
-                  orientation='vertical', format='$%.3f$',cax=cax)
+cb = plt.colorbar(ticks=[0.01, 0.1, 0.2, 0.3, 0.4, 0.5, .6],
+                  orientation='vertical', format='$%.2f$',cax=cax)
 cb.ax.tick_params(labelsize=16)
 ax3.set_title(part3_title,fontsize=20)
 
@@ -421,18 +432,14 @@ if os.path.exists(output_model_filename):
     print('Building plot of ' + str(num_models) + ' individual models...')
     fig, ax1 = plt.subplots ( figsize=(14,5))
     for i in range(0, num_models):
-        ax1.plot( x_ages,models[i,:], color='grey',alpha=0.1)
-#ax1.plot( av_x, av_y, 'r',  linewidth=2)
-    ax1.plot(av_x, av_y, 'r', label = 'Average', linewidth=2)
-    ax1.plot(median_x, median_y, 'purple', linewidth=2, label = 'Median')
-    ax1.plot(mode_x, mode_y, 'blue', linewidth=2, label = 'Mode')
-    ax1.legend(numpoints =1, loc = 'upper right',fontsize=12,labelspacing=0.2)
+        ax1.plot( x_ages,models[i,:], 'r',alpha=0.1)
+    ax1.plot( av_x, av_y, 'k',  linewidth=2)
     ax1.tick_params(labelsize=16)
-    ax1.set_xlabel('Time/yr',fontsize=16)
+    ax1.set_xlabel('Age/yr',fontsize=16)
     ax1.set_ylabel('Intensity/$\mu$T',fontsize=16)
     ax1.set_xlim([age_min,age_max])
     ax1.set_ylim([I_min,I_max])
-    ax1.tick_params(top = 'off')
+#ax1.tick_params(top = False)
 
     plt.savefig('individual_models.pdf', bbox_inches='tight',pad_inches=0.0)
     plt.close(fig)
@@ -440,5 +447,31 @@ else:
     print('Data for individual models not found - no plot made.')
 
 
+# Make dF/dt plots...
+print('Building plot of dF/dt...')
+
+lx, ly = np.loadtxt('credible_dFdt_lower.dat', unpack=True)
+ux, uy = np.loadtxt('credible_dFdt_upper.dat', unpack=True)
+mode_x, mode_y = np.loadtxt('mode_dFdt.dat', unpack=True)
+median_x, median_y = np.loadtxt('median_dFdt.dat', unpack=True)
+av_x, av_y = np.loadtxt('average_dFdt.dat', unpack=True)
 
 
+fig1, ax1 = plt.subplots(figsize=(14,6))
+ax1.fill_between(lx, ly, uy, facecolor='orange', alpha=0.5, edgecolor='g', label='%i%% credible interval' % credible)
+
+ax1.plot(av_x, av_y, 'r', label = 'Average', linewidth=2)
+#ax.plot(best_x, best_y, 'b', linewidth=2, label = 'Best fit')
+#ax1.plot(median_x, median_y, 'purple', linewidth=2, label = 'Median')
+#ax1.plot(mode_x, mode_y, 'blue', linewidth=2, label = 'Mode')
+
+ax1.set_xlabel('Date/yr',fontsize=16)
+ax1.set_ylabel('Rate of change/$\mu T yr^{-1}$',fontsize=16)
+ax1.xaxis.set_tick_params(labelsize=16)
+ax1.yaxis.set_tick_params(labelsize=16)
+ax1.legend(loc = 'lower right',fontsize=12,labelspacing=0.2)
+#min_dFdt = [min(np.abs(ly[i]),np.abs(uy[i])) if uy[i] * ly[i] > 0 else np.NaN for i in range(0,len(lx))]
+#ax1.plot(lx,min_dFdt,color='red')
+ax1.set_ylim([-2,2])
+plt.savefig('dFdt.pdf', bbox_inches='tight',pad_inches=0.0)
+plt.close(fig1)
