@@ -208,7 +208,7 @@ Multiple data may be present within a stratified layer. In such a case within ea
 
 The age ordering of for the whole data is determined from the data with parameters 1 and 2.
 
-Example 1:
+## Example 1:
 The following data file describes a single sequence of stratified data
 
 | Unused column 	| Unused 	| Age    	| Age error 	| Intensity 	| Intensity error 	| Stratification 	|
@@ -226,7 +226,7 @@ The following data file describes a single sequence of stratified data
  Age Datum 1 <= Age datum 2 <= Age datum 3 etc.
 
 
- Example 2:
+## Example 2:
 The following data file describes a multiple sequence of stratified data
 
 | Unused column 	| Unused 	| Age    	| Age error 	| Intensity 	| Intensity error 	| Stratification 	|
@@ -246,7 +246,7 @@ The ages are drawn according to the Monte-Carlo algorithm, provided that
  
  Age Datum 1b <= Age datum 2b <= Age datum 3b
  
- Example 3:
+## Example 3:
 The following data file describes a single stratification sequence, each layer constraining multiple data
 
 | Unused column 	| Unused 	| Age    	| Age error 	| Intensity 	| Intensity error 	| Stratification 	|
