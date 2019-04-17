@@ -42,7 +42,7 @@ INTEGER :: I, K, BURN_IN, NSAMPLE, K_INIT, K_MAX, K_MIN, K_MAX_ARRAYBOUND, discr
 REAL( KIND = 8) :: D_MIN, D_MAX, I_MAX, I_MIN, sigma_move, sigma_change_value, sigma_birth, sigma_age, like_prop, prob, INT_J, pt_death(2), X_MIN, X_MAX, U, RAND(2), alpha, TEMP_RAND, AGE_FACTOR_FOR_PRIOR
 CHARACTER(300) :: WRITE_MODEL_FILE_NAME, format_descriptor, FILENAME
 CHARACTER(1) :: AGE_DISTRIBUTION(:)
-
+CHARACTER :: STRATIFICATION_INDEX(1:NUM_DATA)
 INTEGER, ALLOCATABLE :: ORDER(:)
 REAL( KIND = 8) :: ENDPT_BEST(2), age_frac, credible, age1, age2
 
@@ -209,7 +209,7 @@ k = k_init
 AGE(1:NUM_DATA) = MIDPOINT_AGE(1:NUM_DATA)
 
 ! Check to ensure that the stratification constraints (if any) are satisifed
-IF( .NOT. CHECK_STRATIFICATION(AGE, STRATIFIED, STRATIFICATION_AGE_DIRECTION, NUM_DATA) ) THEN
+IF( .NOT. CHECK_STRATIFICATION(AGE, STRATIFIED, STRATIFICATION_INDEX, STRATIFICATION_AGE_DIRECTION, NUM_DATA) ) THEN
 PRINT*, 'INITIAL DATA SET IS NOT CONSISTENT WITH GIVEN STRATIFICATION CONSTRAINTS'
 STOP
 ENDIF
@@ -512,7 +512,7 @@ IF( age_prop(i_age2) > D_MAX) out = 0! THEN; PRINT*, 'PROPOSED AGE > DMAX'; PRIN
 change_age = 1  !the acceptance probability is the same for MOVE
 ENDDO
 
-IF( .NOT. CHECK_STRATIFICATION(AGE_PROP, STRATIFIED, STRATIFICATION_AGE_DIRECTION,  NUM_DATA) ) out = 0
+IF( .NOT. CHECK_STRATIFICATION(AGE_PROP, STRATIFIED, STRATIFICATION_INDEX, STRATIFICATION_AGE_DIRECTION,  NUM_DATA) ) out = 0
 
 
 ENDIF ! decide on what proposal to make
@@ -1124,14 +1124,20 @@ ENDDO
 
 END FUNCTION CHECK_DIFFERENT
 
-FUNCTION CHECK_STRATIFICATION(AGES, STRATIFICATION, STRATIFICATION_AGE_DIRECTION, N)
-! checks the stratification - returns .TRUE. if everything if the ages are consistent with the stratification constraints, .FALSE. if not.
+FUNCTION CHECK_STRATIFICATION(AGES, STRATIFICATION, STRATIFICATION_INDEX, STRATIFICATION_AGE_DIRECTION, N)
+! In the data file, stratified data are grouped as
+! 1a
+! 2a
+! 1b
+! 2b etc.   [for two independent groups]
+! This routine checks the stratification - returns .TRUE. if everything if the ages are consistent with the stratification constraints, .FALSE. if not.
 ! Stratification is either 1 (the data is tied to neighbouring values with value 1) or 0 (untied).
 IMPLICIT NONE
 LOGICAL :: CHECK_STRATIFICATION
 INTEGER :: N, i, j
 INTEGER :: STRATIFICATION(1:N), STRATIFICATION_AGE_DIRECTION
 REAL( KIND = 8) :: AGES(1:N)
+CHARACTER :: STRATIFICATION_INDEX(1:N)   !contains a,b,c etc. for the group of the stratification
 CHECK_STRATIFICATION = .TRUE.
 
 ! This subroutine checks to see if the stratification constraints are satisfied.
@@ -1156,6 +1162,7 @@ IF( STRATIFICATION(I) .EQ. 0) CYCLE
 ! Check the constraints upwards in index
 DO J = I+1, N
 IF (STRATIFICATION(J) .eq. 0) EXIT   ! We have run out of data to check against.
+IF( STRATIFICATION_INDEX(J) .NE. STRATIFICATION_INDEX(I) ) EXIT   ! We have run out of data within the group defined by 'a', 'b' etc to check against.
 IF( STRATIFICATION(J) == STRATIFICATION(I)) CYCLE
 IF( STRATIFICATION(J) > STRATIFICATION(I) + 1) EXIT   !no need to check any further
 

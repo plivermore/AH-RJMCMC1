@@ -15,7 +15,7 @@ INTEGER, PARAMETER :: MAX_DATA  = 1000
 CHARACTER(500) :: ARG, Data_file_name, Header, WRITE_MODEL_FILE_NAME
 CHARACTER(500) :: inputline, junk, outputs_directory
 INTEGER ::  NARG
-CHARACTER(1) :: AGE_distribution(1:MAX_DATA), AGE_DISTRIBUTION_TYPE
+CHARACTER(1) :: AGE_distribution(1:MAX_DATA), AGE_DISTRIBUTION_TYPE, STRATIFICATION_INDEX(1:MAX_DATA)
 
 INTEGER :: I, K, BURN_IN, NSAMPLE, K_INIT, K_MAX, K_MIN, K_MAX_ARRAYBOUND, discretise_size, show, thin, num,j, &
            NUM_DATA, IOS, K_MAX_ARRAY_BOUND, s, ind, NBINS, I_MODEL, FREQ_WRITE_MODELS, FREQ_WRITE_JOINT_DISTRIB, SAMPLE_INDEX_JOINT_DISTRIBUTION
@@ -32,10 +32,11 @@ INTEGER ::  age_col, d_age_col, F_col, dF_col, distribution_col, id_col, type_co
 REAL( KIND = 8) :: age(1:MAX_DATA), delta_age(1:MAX_DATA),  intensity(1:MAX_DATA), delta_intensity(1:MAX_DATA)
 CHARACTER(20) :: ID(1:MAX_DATA)
 CHARACTER(1) :: Data_type(1: MAX_DATA), Data_type_specified
+CHARACTER(10) :: stratification_read_line(1: MAX_DATA)
 
 REAL( KIND = 8), ALLOCATABLE :: X(:)
 
-LOGICAL :: CALC_CREDIBLE
+LOGICAL :: CALC_CREDIBLE, MULTIPLE_STRATIFIED_DATA
 Real ( KIND = 8) :: credible
 
 TYPE (RETURN_INFO_STRUCTURE) :: RETURN_INFO
@@ -122,7 +123,7 @@ OPEN(30, FILE = Data_file_name, STATUS = 'OLD', FORM = 'FORMATTED', &
 
     IF( type_col .GE. 0) READ(LINE_READ(type_col+1),*) data_type(i)
     IF( distribution_col .GE. 0) READ(LINE_READ(distribution_col+1),*) AGE_distribution(i)
-    IF( strat_col .NE. -1) READ(LINE_READ(strat_col+1),*) stratification(i)
+    IF( strat_col .NE. -1) READ(LINE_READ(strat_col+1),*) stratification_read_line(i)
 
 
     i = i + 1
@@ -173,25 +174,23 @@ X_MAX = MAXVAL( AGE(1:NUM_DATA) ) + X_MAX
 ENDIF
 
 ! Check to see that X_MIN and X_MAX enclose the data set:
-DO i = 1, NUM_DATA
+
 IF( to_upper(AGE_distribution(i)) == 'U') THEN
-IF( X_MIN .GT. AGE(i)-delta_age(i) .OR. X_MAX .LT. AGE(i)+delta_age(i) ) THEN
+IF( X_MIN .GT. MINVAL(AGE(1:NUM_DATA)-delta_age(1:NUM_DATA)) .OR. X_MAX .LT. MAXVAL(AGE(1:NUM_DATA)+delta_age(1:NUM_DATA) ) ) THEN
 PRINT*, 'INCREASE RANGE OF END POINT AGES'
-PRINT*, 'DATUM ', i, ' DOES NOT LIE WITHIN THE END POINTS'
-PRINT*, 'RANGE NEEDS TO INCLUDE ',AGE(i)-delta_age(i),' : ', AGE(i)+delta_age(i)
+WRITE(6,'(A,F8.1,A,F8.1)') 'RANGE NEEDS TO SPAN AT LEAST ', MINVAL(AGE(1:NUM_DATA)-delta_age(1:NUM_DATA)),' : ', MAXVAL(AGE(1:NUM_DATA)+delta_age(1:NUM_DATA))
 STOP
 ENDIF
 !
 ELSE !assumed normal distribution
-IF( X_MIN .GT. AGE(i)-2.0_8 * delta_age(i) .OR. X_MAX .LT. AGE(i)+2.0_8 * delta_age(i) ) THEN
+IF( X_MIN .GT. MINVAL(AGE(1:NUM_DATA)-2.0_8 * delta_age(1:NUM_DATA)) .OR. X_MAX .LT. MAXVAL(AGE(1:NUM_DATA)+2.0_8 * delta_age(1:NUM_DATA) ) ) THEN
 PRINT*, 'INCREASE RANGE OF END POINT AGES'
-WRITE(6,'(A,I4,A,F10.2,A)') 'DATUM ', i, ' OF AGE ', AGE(I), ' DOES NOT LIE WITHIN 2 S.D. OF THE END POINTS'
-PRINT*, 'RANGE NEEDS TO INCLUDE ', AGE(i)-2*delta_age(i),' : ',AGE(i)+2*delta_age(i)
+WRITE(6,*) 'ALL DATA DOES NOT LIE WITHIN 2 S.D. OF THE END POINTS'
+WRITE(6,'(A,F8.1,A,F8.1)') 'RANGE NEEDS TO SPAN AT LEAST ', MINVAL(AGE(1:NUM_DATA)-2.0_8 * delta_age(1:NUM_DATA)),' : ', MAXVAL(AGE(1:NUM_DATA)+2.0_8 * delta_age(1:NUM_DATA))
 STOP
 ENDIF
-
 ENDIF
-ENDDO
+
 
 PRINT*, 'READ IN ', NUM_DATA, 'DATA ITEMS'
 PRINT*, 'DATA AGE RANGE IS ', MINVAL(AGE(1:NUM_DATA)), ' TO ', MAXVAL( AGE(1:NUM_DATA))
@@ -220,11 +219,48 @@ ENDIF
     X(I) = X_MIN + REAL(I-1, KIND = 8)/REAL(discretise_size-1, KIND = 8) * (X_MAX - X_MIN)
     ENDDO
 
+!****************
+! STRATIFICATION
+!****************
+! Interpret stratification information
+! First, see if the user has specified different datasets using 1a, 2a, 3a; 1b, 2b; etc notation, or simply 1,2,3,4 etc.
+! We can tell these apart by looking for the first non-zero instance of stratification_read_line(:) and seeing whether it ends with an 'a'.
+MULTIPLE_STRATIFIED_DATA = .FALSE.
+DO i = 1, NUM_DATA
+IF(index(stratification_read_line(i), 'a') .NE. 0) MULTIPLE_STRATIFIED_DATA = .TRUE.
+ENDDO
+!PRINT*, MULTIPLE_STRATIFIED_DATA
+
+IF( MULTIPLE_STRATIFIED_DATA ) THEN ! read in
+! separate into integer and character if non-zero
+STRATIFICATION(:) = 0
+STRATIFICATION_INDEX(:) = ' '
+DO i = 1, NUM_DATA
+IF( stratification_read_line(i)(1:1) .NE. '0') THEN
+J = LEN(TRIM(stratification_read_line(i)))
+READ( stratification_read_line(i)(1:j-1),'(I)') STRATIFICATION(i)
+READ( stratification_read_line(i)(j:j),'(A)') STRATIFICATION_INDEX(i)
+ENDIF
+ENDDO
+
+ELSE  !either no stratification, or only a single dataset is specified without the 'a' notation. In either case, set all elements of stratification_index to 'a'
+
+DO I = 1, NUM_DATA
+READ( stratification_read_line(i),*) STRATIFICATION(I)
+ENDDO
+stratification_index(1:NUM_DATA) = 'a'
+ENDIF
+
+
 IF( MAXVAL( stratification(1:NUM_DATA)) .eq. 0) THEN
 PRINT*, 'NO STRATIFICATION CONSTRAINTS'
 ELSE
 PRINT*, 'STRATIFICATION CONSTRAINTS BEING USED'
 ENDIF
+
+!DO i=1,NUM_DATA
+!PRINT*, STRATIFICATION(i), STRATIFICATION_INDEX(i)
+!ENDDO
 
 ! If data_type is used, then gather together data of type 'B' with common ID. Assumes grouped data is listed sequentially.
 ! Grouped samples are moved collectively by the MCMC algorithm when changing a sample date.

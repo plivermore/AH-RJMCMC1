@@ -19,6 +19,8 @@ Thomas Bodin (Universite Lyon, Lyon)
 
 Maintained by Phil Livermore
 
+Last update: April 17th 2019
+
 ## Overview
 
 AH-RJMCMC is an open-source Fortran code that computes a transdimensional posterior probability distribution of archeomagnetic intensity as a function of time.
@@ -121,10 +123,9 @@ age distribution: the column number specifying the age distribution flag or
 -1 if ALL the data ages are distributed uniformly (with centre point given by the age, and half-width given by the delta age)
 -2 if ALL the data ages are distributed normally (with mean given by the age, and standard deviation given by delta age)
 
-stratification: the column number specifying whether the data are stratified or 
+stratification: the column number specifying stratification information or 
 -1 if stratification is to be ignored. 
-In the data file, a value if 0 means that the datum is unstratified.
-A value of i, where i>0, means the group of data with parameter i (there may be many such data) is assumed to represent a layer, within which the ages are unstratified. The next layer, of parameter i+1, is assumed to be another layer, but each datum within layer i must have an age less than (or greater than, depending on which way the ages are ordered) the data of parameter i+1.  If each layer contains only one datum, then these data are stratified and their ages must obey a strict ordering. A datum with a parameter of 0 delineates the boundary of the stratified data set. The age ordering of for the whole data is determined from the data with parameters 1 and 2. 
+See the section below about denoting stratification within the data file.
 
 In all the above, the column index begins at 0.
 
@@ -195,4 +196,73 @@ Plotting\_intensity\_range: min/max of plotting range of intensity
 Used only by the plotting scripts. e.g.
 `Plotting_intensity_range 50 80`
 
+# The Data file
+## Stratification
+The column of stratification information within the data file can specify a variety of scenarios:
 
+- no stratification (denoted 0)
+- a single sequence of stratified layers (denoted 1,2,3,4...)
+- multiple (independent) sequences of stratified layers (denoted 1a, 2a, 3a...1b,2b,3b,...etc)
+
+Multiple data may be present within a stratified layer. In such a case within each layer the data are assumed to be mutually independent but the layers themselves obey stratification.
+
+The age ordering of for the whole data is determined from the data with parameters 1 and 2.
+
+Example 1:
+The following data file describes a single sequence of stratified data
+
+| Unused column 	| Unused 	| Age    	| Age error 	| Intensity 	| Intensity error 	| Stratification 	|
+|---------------	|--------	|--------	|--------	|-----------	|-----------------	|----------------	|
+| 0             	| 84     	| 1330.5 	| 47.5   	| 51.4      	| 0.7             	| 1              	|
+| 0             	| 83     	| 1391.5 	| 108.5  	| 53.5      	| 1.0             	| 2              	|
+| 0             	| 82     	| 1400.5 	| 99.0   	| 54.8      	| 1.9             	| 3              	|
+| 0             	| 81     	| 1425   	| 124.0  	| 56.1      	| 1.4             	| 4              	|
+| 0             	| 80     	| 1425   	| 124.0  	| 57.8      	| 2.9             	| 5              	|
+| 0             	| 79     	| 1488.5 	| 60.5   	| 57.1      	| 2.0             	| 6              	|
+
+ The data stratification is determined by data 1 and 2: age is increasing with stratification index.
+ The ages are drawn according to the Monte-Carlo algorithm, provided that 
+ 
+ Age Datum 1 <= Age datum 2 <= Age datum 3 etc.
+
+
+ Example 2:
+The following data file describes a multiple sequence of stratified data
+
+| Unused column 	| Unused 	| Age    	| Age error 	| Intensity 	| Intensity error 	| Stratification 	|
+|---------------	|--------	|--------	|--------	|-----------	|-----------------	|----------------	|
+| 0             	| 84     	| 1330.5 	| 47.5   	| 51.4      	| 0.7             	| 1a              	|
+| 0             	| 83     	| 1391.5 	| 108.5  	| 53.5      	| 1.0             	| 2a              	|
+| 0             	| 82     	| 1400.5 	| 99.0   	| 54.8      	| 1.9             	| 3a              	|
+| 0             	| 82     	| 1212   	| 124.0  	| 56.1      	| 1.4             	| 1b              	|
+| 0             	| 83     	| 1271   	| 124.0  	| 57.8      	| 2.9             	| 2b              	|
+| 0             	| 43     	| 13034 	| 60.5   	| 57.1      	| 2.0             	| 3b              	|
+
+ The data stratification is determined by the first data 1 and 2: age is increasing with stratification index.
+
+The ages are drawn according to the Monte-Carlo algorithm, provided that 
+ 
+ Age Datum 1a <= Age datum 2a <= Age datum 3a
+ 
+ Age Datum 1b <= Age datum 2b <= Age datum 3b
+ 
+ Example 3:
+The following data file describes a single stratification sequence, each layer constraining multiple data
+
+| Unused column 	| Unused 	| Age    	| Age error 	| Intensity 	| Intensity error 	| Stratification 	|
+|---------------	|--------	|--------	|--------	|-----------	|-----------------	|----------------	|
+| 0             	| 84     	| 1330.5 	| 47.5   	| 51.4      	| 0.7             	| 1              	|
+| 0             	| 83     	| 1325 	| 108.5  	| 53.5      	| 1.0             	| 1              	|
+| 0             	| 82     	| 1316 	| 99.0   	| 52.8      	| 1.9             	| 1              	|
+| 0             	| 82     	| 1308   	| 124.0  	| 53.1      	| 1.4             	| 1              	|
+| 0             	| 83     	| 1391   	| 124.0  	| 57.8      	| 2.9             	| 2              	|
+| 0             	| 43     	| 1401 	| 60.5   	| 57.1      	| 2.0             	| 2              	|
+
+ The data stratification is determined by the first data 1 and 2: age is increasing with stratification index.
+
+The ages are drawn according to the Monte-Carlo algorithm, provided that 
+ 
+ All ages within layer 1 are <= All ages within layer 2
+ 
+ Within any layer there is no assumption of age ordering. Therefore, the first datum within layer 1 could have a drawn age greater or less than the second datum within layer 1. The only requirement in this example is that each datum within layer 1 has an age less than or equal to any datum within layer 2.
+ 
