@@ -222,6 +222,11 @@ ENDIF
 !****************
 ! STRATIFICATION
 !****************
+IF( strat_col .EQ. -1) THEN
+stratification_index(1:NUM_DATA) = 'a'
+STRATIFICATION(:) = 0
+ELSE
+
 ! Interpret stratification information
 ! First, see if the user has specified different datasets using 1a, 2a, 3a; 1b, 2b; etc notation, or simply 1,2,3,4 etc.
 ! We can tell these apart by looking for the first non-zero instance of stratification_read_line(:) and seeing whether it ends with an 'a'.
@@ -251,6 +256,7 @@ ENDDO
 stratification_index(1:NUM_DATA) = 'a'
 ENDIF
 
+ENDIF
 
 IF( MAXVAL( stratification(1:NUM_DATA)) .eq. 0) THEN
 PRINT*, 'NO STRATIFICATION CONSTRAINTS'
