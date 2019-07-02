@@ -19,6 +19,8 @@ CHARACTER(len=1) :: AGE_distribution(1:MAX_DATA), AGE_DISTRIBUTION_TYPE, STRATIF
 
 INTEGER :: I, K, BURN_IN, NSAMPLE, K_INIT, K_MAX, K_MIN, K_MAX_ARRAYBOUND, discretise_size, show, thin, num,j, &
 NUM_DATA, IOS, K_MAX_ARRAY_BOUND, s, ind, NBINS, I_MODEL, FREQ_WRITE_MODELS, FREQ_WRITE_JOINT_DISTRIB, SAMPLE_INDEX_JOINT_DISTRIBUTION
+INTEGER :: input_random_seed
+
 REAL( KIND = 8) :: I_MAX, I_MIN, sigma_move, sigma_change_value, sigma_age, sigma_birth, int_j,&
 X_MIN, X_MAX, age_frac
 
@@ -69,6 +71,8 @@ PRINT*, 'CANNOT OPEN INPUT FILE'
 STOP
 ENDIF
 
+!default
+input_random_seed = 1
 
 DO
 READ(30,'(A)',END=101) inputline
@@ -92,7 +96,7 @@ IF ( to_upper(inputline(1:len('output_model'))) == to_upper('output_model') ) re
 IF ( to_upper(inputline(1:len('output_joint_distribution_freq'))) == to_upper('output_joint_distribution_freq') ) read(inputline(len('output_joint_distribution_freq')+2:),*) FREQ_WRITE_JOINT_DISTRIB
 IF ( to_upper(inputline(1:len('Credible'))) == to_upper('Credible') ) read(inputline(len('Credible')+2:),*) Credible
 IF ( to_upper(inputline(1:len('Outputs_directory'))) == to_upper('Outputs_directory') ) read(inputline(len('Outputs_directory')+2:),'(A)') outputs_directory
-
+IF ( to_upper(inputline(1:len('SEED'))) == to_upper('SEED') ) read(inputline(len('SEED')+2:),*) input_random_seed
 ENDDO
 101     CONTINUE
 
@@ -177,9 +181,9 @@ ALLOCATE( RETURN_INFO%MODE_DFDT(1:discretise_size) )
 
 CALL RANDOM_SEED(SIZE = i)
 ALLOCATE( SEED(1:i) )
-SEED(:) = 1
+SEED(:) = input_random_seed
 CALL RANDOM_SEED(PUT = SEED)
-
+PRINT*, 'INITIALISING RANDON NUMBERS USING SEED ', input_random_seed
 
 IF( X_MIN .eq. X_MAX) THEN
 X_MIN = MINVAL( AGE(1:NUM_DATA) ) - X_MIN

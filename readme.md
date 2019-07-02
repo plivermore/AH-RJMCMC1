@@ -197,6 +197,8 @@ Plotting\_intensity\_range: min/max of plotting range of intensity
 Used only by the plotting scripts. e.g.
 `Plotting_intensity_range 50 80`
 
+SEED: Seed the random number generator with seed integer n. The default value is 1.
+
 # The Data file
 ## Stratification
 The column of stratification information within the data file can specify a variety of scenarios:
