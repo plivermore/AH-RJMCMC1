@@ -16,12 +16,15 @@ MODULE AGE_HYPERPARAMETER_RJMCMC
 ! RUNNING_MODE <> 1  This sets the likelihood to be unity, so that the prior distributions are sampled - these can be checked against the assumed distributions.
 
 USE SORT
+use iso_fortran_env, only: output_unit, error_unit
 
 TYPE RETURN_INFO_STRUCTURE
-REAL( KIND = 8), ALLOCATABLE, DIMENSION(:) :: AV, BEST, SUP, INF, MEDIAN, MODE, CHANGE_POINTS, CONVERGENCE, SUP_dFdt, INF_dFdt, AV_DFDT, MODE_DFDT, MEDIAN_DFDT
+REAL( KIND = 8), ALLOCATABLE, DIMENSION(:) :: AV, BEST, SUP, INF, MEDIAN, MODE, CHANGE_POINTS, CONVERGENCE
+REAL( KIND = 8), ALLOCATABLE, DIMENSION(:) :: SUP_dFdt, INF_dFdt, AV_DFDT, MODE_DFDT, MEDIAN_DFDT
 REAL( KIND = 8), ALLOCATABLE :: MARGINAL_AGES(:,:), MARGINAL_DENSITY_INTENSITY(:,:)
 INTEGER :: MAX_NUMBER_CHANGE_POINTS_HISTORY
 INTEGER, ALLOCATABLE :: n_changepoint_hist(:)
+integer :: output_changepoints_unit
 END TYPE RETURN_INFO_STRUCTURE
 
 INTEGER, PARAMETER :: AGE_ASCENDING = 1, AGE_DESCENDING = 2
@@ -30,16 +33,19 @@ REAL( KIND = 8), PARAMETER :: PI = 3.14159265358979_8
 INTEGER :: RUNNING_MODE
 
 CONTAINS
-SUBROUTINE RJMCMC(burn_in, NUM_DATA, MIDPOINT_AGE, DELTA_AGE, INTENSITY, I_SD, STRATIFIED, AGE_DISTRIBUTION, AGE_INDICES, NSAMPLE, I_MIN, I_MAX, X_MIN, X_MAX, K_MIN, K_MAX, SIGMA_MOVE, sigma_change_value, sigma_birth, sigma_age, age_frac, discretise_size, SHOW, THIN, NBINS, RETURN_INFO, CALC_CREDIBLE, FREQ_WRITE_MODELS, WRITE_MODEL_FILE_NAME, FREQ_WRITE_JOINT_DISTRIB, credible, Outputs_directory)
+SUBROUTINE RJMCMC(burn_in, NUM_DATA, MIDPOINT_AGE, DELTA_AGE, INTENSITY, I_SD, STRATIFIED, STRATIFICATION_INDEX, AGE_DISTRIBUTION, AGE_INDICES, NSAMPLE, I_MIN, I_MAX, X_MIN, X_MAX, K_MIN, K_MAX, SIGMA_MOVE, sigma_change_value, sigma_birth, sigma_age, age_frac, discretise_size, SHOW, THIN, NBINS, RETURN_INFO, CALC_CREDIBLE, FREQ_WRITE_MODELS, WRITE_MODEL_FILE_NAME, FREQ_WRITE_JOINT_DISTRIB, credible, Outputs_directory)
 
 
 IMPLICIT NONE
 TYPE (RETURN_INFO_STRUCTURE) :: RETURN_INFO
 CHARACTER(*) :: Outputs_directory
 INTEGER :: I, K, BURN_IN, NSAMPLE, K_INIT, K_MAX, K_MIN, K_MAX_ARRAYBOUND, discretise_size, show, thin, num, J, &
-           NUM_DATA, K_MAX_ARRAY_BOUND, s, birth, death, move, ind, k_prop, accept, k_best, out, &
-           NBINS, BIN_INDEX, IS_DIFF, CHANGE_AGE, CHANGE_value, i_age, FREQ_WRITE_MODELS, IOS, FREQ_WRITE_JOINT_DISTRIB, SAMPLE_INDEX_JOINT_DISTRIBUTION
-REAL( KIND = 8) :: D_MIN, D_MAX, I_MAX, I_MIN, sigma_move, sigma_change_value, sigma_birth, sigma_age, like_prop, prob, INT_J, pt_death(2), X_MIN, X_MAX, U, RAND(2), alpha, TEMP_RAND, AGE_FACTOR_FOR_PRIOR
+NUM_DATA, K_MAX_ARRAY_BOUND, s, birth, death, move, ind, k_prop, accept, k_best, out, &
+NBINS, BIN_INDEX, IS_DIFF, CHANGE_AGE, CHANGE_value, i_age, FREQ_WRITE_MODELS, IOS, &
+FREQ_WRITE_JOINT_DISTRIB, SAMPLE_INDEX_JOINT_DISTRIBUTION
+REAL( KIND = 8) :: D_MIN, D_MAX, I_MAX, I_MIN, sigma_move, sigma_change_value, &
+sigma_birth, sigma_age, like_prop, prob, INT_J, pt_death(2), &
+X_MIN, X_MAX, U, RAND(2), alpha, TEMP_RAND, AGE_FACTOR_FOR_PRIOR
 CHARACTER(300) :: WRITE_MODEL_FILE_NAME, format_descriptor, FILENAME
 CHARACTER(1) :: AGE_DISTRIBUTION(:)
 CHARACTER :: STRATIFICATION_INDEX(1:NUM_DATA)
@@ -48,9 +54,11 @@ REAL( KIND = 8) :: ENDPT_BEST(2), age_frac, credible, age1, age2
 
 INTEGER :: AGE_INDICES(:), MAX_AGE_INDEX, i_age2
 
-INTEGER :: b, bb, AB, AD, PD, PB, ACV, PCV, AP, PP, PA, AA, num_age_changes, STRATIFIED(:), STRATIFICATION_AGE_DIRECTION
+INTEGER :: b, bb, AB, AD, PD, PB, ACV, PCV, AP, PP, PA, AA, num_age_changes, &
+STRATIFIED(:), STRATIFICATION_AGE_DIRECTION
 REAL( KIND = 8) :: MIDPOINT_AGE(:), DELTA_AGE(:), Intensity(:), I_sd(:), ENDPT(2), ENDPT_PROP(2), like, like_best, like_init
-REAL( KIND = 8), ALLOCATABLE :: VAL_MIN(:), VAL_MAX(:),   MINI(:,:), MAXI(:,:), PT(:,:), PT_PROP(:,:), interpolated_signal(:), X(:), PTS_NEW(:,:), PT_BEST(:,:), age(:), age_prop(:), interpolated_signal_grad(:), X2(:)
+REAL( KIND = 8), ALLOCATABLE :: VAL_MIN(:), VAL_MAX(:),   MINI(:,:), MAXI(:,:), PT(:,:), PT_PROP(:,:)
+REAL( KIND = 8), ALLOCATABLE :: interpolated_signal(:), X(:), PTS_NEW(:,:), PT_BEST(:,:), age(:), age_prop(:), interpolated_signal_grad(:), X2(:)
 INTEGER, ALLOCATABLE, DIMENSION(:) :: IND_MIN, IND_MAX
 INTEGER, ALLOCATABLE :: discrete_history(:,:)
 LOGICAL :: CALC_CREDIBLE
@@ -59,6 +67,8 @@ LOGICAL :: CALC_CREDIBLE
 INTEGER, ALLOCATABLE :: discrete_dFdt(:,:)
 INTEGER, ALLOCATABLE, DIMENSION(:) :: IND_MIN_dFdt, IND_MAX_dFdt
 REAL( KIND = 8), ALLOCATABLE :: VAL_MIN_dFdt(:), VAL_MAX_dFdt(:),   MINI_dFdt(:,:), MAXI_dFdt(:,:)
+
+integer :: unit_write_models
 
 !needed to write to files in row format:
 WRITE(format_descriptor,'(A,i4,A)') '(',discretise_size,'F14.4)'
@@ -71,15 +81,18 @@ k_max_array_bound = k_max + 1;
 D_min = X_min
 D_max = X_max
 
-NUM=ceiling((nsample-burn_in)*(100.0_8-credible)/200.0_8/thin) ! number of collected samples for credible intervals
+NUM = ceiling((nsample-burn_in)*(100.0_8-credible)/200.0_8/thin) ! number of collected samples for credible intervals
+
+write(unit=output_unit, fmt=*) 'number of collected samples for credible intervals = ', num
 
 ALLOCATE( X(1: discretise_size) )
-    DO I=1, discretise_size
-    X(I) = X_MIN + REAL(I-1, KIND = 8)/REAL(discretise_size-1, KIND = 8) * (X_MAX - X_MIN)
-    ENDDO
+DO I=1, discretise_size
+X(I) = X_MIN + REAL(I-1, KIND = 8)/REAL(discretise_size-1, KIND = 8) * (X_MAX - X_MIN)
+ENDDO
 
-ALLOCATE( val_min(1: discretise_size), val_max(1: discretise_size), ind_min(1: discretise_size), ind_max(1: discretise_size),  &
-MINI(1: discretise_size, 1:NUM), MAXI(1: discretise_size, 1:NUM), age(1: num_data), age_prop(1:num_data), discrete_history(1:discretise_size,1:NBINS) )
+ALLOCATE( val_min(1: discretise_size), val_max(1: discretise_size), ind_min(1: discretise_size), ind_max(1: discretise_size) )
+ALLOCATE( MINI(1: discretise_size, 1:NUM), MAXI(1: discretise_size, 1:NUM) )
+ALLOCATE( age(1: num_data), age_prop(1:num_data), discrete_history(1:discretise_size,1:NBINS) )
 
 ALLOCATE( pt(1:k_max_array_bound,2), pt_prop(1:k_max_array_bound,2) , pt_best(1:k_max_array_bound,2) )
 
@@ -90,27 +103,30 @@ STRATIFICATION_AGE_DIRECTION = 0
 AGE1 = 0.0_8
 AGE2 = 0.0_8
 DO i = 1, NUM_DATA
-IF (STRATIFIED(I) == 1)  AGE1 = MIDPOINT_AGE(i) 
+IF (STRATIFIED(I) == 1)  AGE1 = MIDPOINT_AGE(i)
 IF (STRATIFIED(I) == 2)  AGE2 = MIDPOINT_AGE(i)
 ENDDO
 IF( MAXVAL( STRATIFIED ) > 0 .AND. (AGE1 .EQ. 0.0_8 .OR. AGE2 .EQ. 0.0_8)) THEN
-PRINT*,'FATAL ERROR: DATA STRATIFIED BUT NO DATA WITH INDEX 1 OR 2'
+write(error_unit, fmt='(a)') 'FATAL ERROR: DATA STRATIFIED BUT NO DATA WITH INDEX 1 OR 2'
 STOP
 ENDIF
 
 IF( MAXVAL( STRATIFIED) > 0) THEN
-
 IF( AGE1 > AGE2) THEN
 STRATIFICATION_AGE_DIRECTION = AGE_DESCENDING
-PRINT*, 'STRATIFIED DATA ARE ARRANGED IN: AGE DESCENDING ORDER'
+write(output_unit, fmt='(a)')  'STRATIFIED DATA ARE ARRANGED IN: AGE DESCENDING ORDER'
 ELSEIF( AGE2 > AGE1) THEN
 STRATIFICATION_AGE_DIRECTION = AGE_ASCENDING
-PRINT*, 'STRATIFIED DATA ARE ARRANGED IN: AGE ASCENDING ORDER'
+write(output_unit, fmt='(a)')  'STRATIFIED DATA ARE ARRANGED IN: AGE ASCENDING ORDER'
 ELSE
-PRINT*, 'ERROR: CANNOT DETERMINE AGE ORDERING OF THE DATA'
-STOP
-ENDIF
+write(error_unit, fmt='(a)') '******************************************************************'
+write(error_unit, fmt='(a)') 'CANNOT DETERMINE AGE ORDERING OF THE STRATIFIED DATA USING MIDPOINT AGES'
+write(error_unit, fmt='(a)') 'AGES ASSUMED ORDERED IN TIME ASCENDING ORDER (OLDEST FIRST, NEWEST LAST)'
+write(error_unit, fmt='(a)') '******************************************************************'
 
+STRATIFICATION_AGE_DIRECTION = AGE_ASCENDING
+!STOP
+ENDIF
 ENDIF
 
 ! For dF/dt
@@ -119,31 +135,27 @@ ALLOCATE( discrete_dFdt(1:discretise_size,1:NBINS) )
 ! Setup file IO for (a) writing model files and (b) writing the joint distribution data
 
 IF( FREQ_WRITE_MODELS > 0) then
-OPEN(15, FILE = TRIM(Outputs_directory)//'/'//TRIM(WRITE_MODEL_FILE_NAME), STATUS = 'REPLACE', FORM = 'FORMATTED', IOSTAT = IOS)
-  IF( IOS .NE. 0) THEN
-    PRINT*, 'CANNOT OPEN FILE FOR MODEL WRITING ', TRIM(Outputs_directory)//'/'//TRIM(WRITE_MODEL_FILE_NAME)
-    STOP
-  ENDIF
+OPEN(newunit=unit_write_models, FILE = TRIM(Outputs_directory)//'/'//TRIM(WRITE_MODEL_FILE_NAME), STATUS = 'REPLACE', FORM = 'FORMATTED', IOSTAT = IOS)
+IF( IOS .NE. 0) THEN
+write(error_unit, fmt='(a)') 'CANNOT OPEN FILE FOR MODEL WRITING ', TRIM(Outputs_directory)//'/'//TRIM(WRITE_MODEL_FILE_NAME)
+STOP
+ENDIF
 
-WRITE(15,*) discretise_size, floor(REAL(nsample-burn_in, KIND = 8)/thin/FREQ_WRITE_MODELS)
-WRITE(15,format_descriptor) X(1:discretise_size)
+WRITE(unit=unit_write_models,fmt=*) discretise_size, floor(REAL(nsample-burn_in, KIND = 8)/thin/FREQ_WRITE_MODELS)
+WRITE(unit=unit_write_models,fmt=format_descriptor) X(1:discretise_size)
 ENDIF
 
 
 IF( FREQ_WRITE_JOINT_DISTRIB > 0) then
 CALL SYSTEM('mkdir -p '//TRIM(Outputs_directory)//'/Joint_distribution_data')
-
 DO i=1,NUM_DATA
 WRITE(FILENAME,'(A,A,I4.4,A)') TRIM(Outputs_directory),'/Joint_distribution_data/Sample_',i,'.dat'
 OPEN(30+i, FILE = FILENAME, STATUS = 'REPLACE', FORM = 'FORMATTED', IOSTAT = IOS)
-
-
 IF( IOS .NE. 0) THEN
 PRINT*, 'CANNOT OPEN FILES FOR WRITING JOINT_DISTRIBUTION DATA'
 PRINT*,' FAILED ON FILENAME ', TRIM(FILENAME)
 STOP
 ENDIF
-
 ENDDO
 ENDIF
 
@@ -166,7 +178,7 @@ ind_max(:) = 0
 MINI(:,:) = 0.
 MAXI(:,:) = 0.
 pt(:,:) = 0.
-b = 0 
+b = 0
 bb = 0
 AB=0
 AD=0
@@ -180,7 +192,7 @@ PA = 0
 AA = 0
 RETURN_INFO%best(:) = 0.0_8
 RETURN_INFO%AV(:) = 0.0_8
-RETURN_INFO%change_points(:) = 0.0_8
+!RETURN_INFO%change_points(:) = 0.0_8  af
 RETURN_INFO%convergence(:) = 0.0_8
 RETURN_INFO%sup(:) = 0.0_8
 RETURN_INFO%inf(:) = 0.0_8
@@ -210,7 +222,7 @@ AGE(1:NUM_DATA) = MIDPOINT_AGE(1:NUM_DATA)
 
 ! Check to ensure that the stratification constraints (if any) are satisifed
 IF( .NOT. CHECK_STRATIFICATION(AGE, STRATIFIED, STRATIFICATION_INDEX, STRATIFICATION_AGE_DIRECTION, NUM_DATA) ) THEN
-PRINT*, 'INITIAL DATA SET IS NOT CONSISTENT WITH GIVEN STRATIFICATION CONSTRAINTS'
+write(error_unit,fmt=*) 'INITIAL DATA SET IS NOT CONSISTENT WITH GIVEN STRATIFICATION CONSTRAINTS'
 STOP
 ENDIF
 
@@ -225,8 +237,8 @@ enddo
 DO i=1,k_init
 CALL RANDOM_NUMBER( RAND(1:2))
 !PRINT*, RAND(1:2), D_MIN, D_MAX, I_MIN, I_MAX
-    pt(i,1)=D_min+rand(1) * (D_max-D_min)  ! position of internal vertex
-    pt(i,2)=I_min+rand(2) * (I_max-I_min)  ! magnitude of vertices
+pt(i,1)=D_min+rand(1) * (D_max-D_min)  ! position of internal vertex
+pt(i,2)=I_min+rand(2) * (I_max-I_min)  ! magnitude of vertices
 enddo
 
 CALL RANDOM_NUMBER (RAND(1:2))
@@ -281,69 +293,66 @@ like_init=like
 do s=1,nsample
 
 ! Print statistics of the chain.
-    
-    if (mod(s,show)==0 .AND. s>burn_in) then
 
-        write(6,'(A,i8,A,i3,5(A,F6.1),A,ES12.2)' ) 'Samples: ',s, ' Vertices: ',k, ' Acceptance: change F ', 100.0*ACV/PCV, ' change age ', 100.0*AP/PP,  ' birth ', 100.0*AB/PB,' death ',100.0*AD/PD  ,' resample ages ', 100.0*AA/PA, ' likelihood ', like
+if (mod(s,show)==0 .AND. s>burn_in) then
 
-    endif
-     
-    
-    birth=0
-    move=0
-    death=0
-    change_age = 0
-    change_value = 0
+write(output_unit,'(A,i8,A,i3,5(A,F6.1),A,ES12.2)' ) 'Samples: ',s, ' Vertices: ',k, ' Acceptance: change F ', 100.0*ACV/PCV, &
+' change age ', 100.0*AP/PP,  ' birth ', 100.0*AB/PB,' death ',100.0*AD/PD  ,' resample ages ', 100.0*AA/PA, ' likelihood ', like
 
-    age_prop = age
-    pt_prop=pt
-    endpt_prop = endpt
-    like_prop = like
-    k_prop = k
-    prob = 1.0_8
-    out = 1
-    AGE_FACTOR_FOR_PRIOR = 1.0_8
+endif
 
-    !----------------------------------------------------------------------
-    ! Every 3rd iteration, propose a new value
-    if (mod(s,3)==0) then ! Change Value
-        if (s>burn_in)  PCV=PCV+1
-        change_value = 1
-        k_prop = k
-        CALL RANDOM_NUMBER( RAND(1))
-        ind=ceiling(RAND(1)*(k+2))
+
+birth = 0
+move  = 0
+death = 0
+change_age = 0
+change_value = 0
+
+age_prop = age
+pt_prop = pt
+endpt_prop = endpt
+like_prop = like
+k_prop = k
+prob = 1.0_8
+out = 1
+AGE_FACTOR_FOR_PRIOR = 1.0_8
+
+!----------------------------------------------------------------------
+! Every 3rd iteration, propose a new value
+!======================================================================
+if ( mod(s,3) == 0 ) then ! Change Value
+!======================================================================
+if (s > burn_in)  PCV = PCV + 1
+change_value = 1
+k_prop = k
+CALL RANDOM_NUMBER( RAND(1))
+ind=ceiling(RAND(1)*(k+2))
 ! Check bounds to see if outside prior
 
-        
-        if(ind == k+1)  then! change left end point
-            endpt_prop(1) = endpt(1) + randn()*sigma_change_value
-            if( endpt_prop(1) < I_min .or. endpt_prop(1) > I_max ) out = 0
+if(ind == k+1)  then! change left end point
+endpt_prop(1) = endpt(1) + randn()*sigma_change_value
+if( endpt_prop(1) < I_min .or. endpt_prop(1) > I_max ) out = 0
+elseif( ind == k+2) then ! change right end point
+endpt_prop(2) = endpt(2) + randn()*sigma_change_value
+if( endpt_prop(2) < I_min .or. endpt_prop(2) > I_max )out = 0
+else ! change interior point
+pt_prop(ind,2) = pt(ind,2) + randn()*sigma_change_value
+if( pt_prop(ind,2)>I_max .or. pt_prop(ind,2)<I_min) out = 0
+endif
 
-            
-        elseif( ind == k+2) then ! change right end point
-            endpt_prop(2) = endpt(2) + randn()*sigma_change_value
-            if( endpt_prop(2) < I_min .or. endpt_prop(2) > I_max )out = 0
-
-            
-        else ! change interior point
-            pt_prop(ind,2) = pt(ind,2) + randn()*sigma_change_value
-            if( pt_prop(ind,2)>I_max .or. pt_prop(ind,2)<I_min) out = 0
-
-        endif
-
-
-    !-----------------------------------------------------------------------
-        ! Every 3rd iteration iteration change the vertex positions
-    elseif (mod(s,3)==1) then ! Change position
-        CALL RANDOM_NUMBER( RAND(1))
-        u=RAND(1) !Chose randomly between 3 different types of moves
-        if (u<0.333) then ! BIRTH ++++++++++++++++++++++++++++++++++++++
-            birth=1
-            if (s>burn_in) PB=PB+1
-
-            k_prop = k+1
-            CALL RANDOM_NUMBER( RAND(1))
-            pt_prop(k+1,1)=D_min+RAND(1)*(D_max-D_min)
+!-----------------------------------------------------------------------
+! Every 3rd iteration iteration change the vertex positions
+!======================================================================
+elseif (mod(s,3)==1) then ! Change position
+!======================================================================
+CALL RANDOM_NUMBER( RAND(1))
+u = RAND(1) !Chose randomly between 3 different types of moves
+if ( u < 0.333 ) then ! BIRTH ++++++++++++++++++++++++++++++++++++++
+birth = 1
+if (s>burn_in) PB=PB+1
+k_prop = k+1
+CALL RANDOM_NUMBER( RAND(1))
+pt_prop(k+1,1)=D_min+RAND(1)*(D_max-D_min)
 
 ! check that all the time-points are different:
 DO WHILE ( CHECK_DIFFERENT(X_MIN, X_MAX, pt_prop(1:k+1,1)) .EQ. 1)
@@ -354,81 +363,78 @@ pt_prop(k+1,1)=D_min+RAND(1)*(D_max-D_min)
 END DO
 
 !interpolate to find magnitude as inferred by current state
-CALL Find_linear_interpolated_values(k, x_min, x_max, pt, endpt, 1, pt_prop(k+1:k+1,1), interpolated_signal)
+CALL Find_linear_interpolated_values(k, x_min, x_max, pt, endpt, 1, &
+pt_prop(k+1:k+1,1), interpolated_signal)
 
-            
-            pt_prop(k+1,2)=interpolated_signal(1)+randn()*sigma_birth
-            
+
+pt_prop(k+1,2)=interpolated_signal(1)+randn()*sigma_birth
+
 !GET prob
-            prob=(1.0_8/(sigma_birth*sqrt(2.0_8*pi)))*exp(-(interpolated_signal(1)-pt_prop(k+1,2))**2/(2.0_8*sigma_birth**2))
-            
-            !Check BOUNDS to see if outside prior
-            out=1
-            if ((pt_prop(k+1,2)>I_max) .OR. (pt_prop(k+1,2)<I_min))  out=0
+prob = (1.0_8/(sigma_birth*sqrt(2.0_8*pi))) * &
+exp(-(interpolated_signal(1)-pt_prop(k+1,2))**2/(2.0_8*sigma_birth**2))
 
-            if ((pt_prop(k+1,1)>D_max) .OR. (pt_prop(k+1,1)<D_min))  out=0
-
-            if (k_prop>k_max) out=0
-
+!Check BOUNDS to see if outside prior
+out = 1
+if ((pt_prop(k+1,2)>I_max) .OR. (pt_prop(k+1,2)<I_min))  out = 0
+if ((pt_prop(k+1,1)>D_max) .OR. (pt_prop(k+1,1)<D_min))  out = 0
+if (k_prop>k_max) out=0
 
 ! make sure the positions are sorted in ascending order.
 ALLOCATE( ORDER(1:k_prop), pts_new(1:k_prop,1:2) )
-
 ! Find the order that sorts the first row of the array pt:
 order = rargsort(pt_prop(1:k_prop,1))
-
 ! Sort both the values and ages based on this ordering:
 do i = 1, k_prop
 pts_new(i,1:2) = pt_prop( order(i), 1:2)
 enddo
 pt_prop(1:k_prop,1:2) = pts_new(:,:)
-
 DEALLOCATE (ORDER, pts_new)
 
 
+elseif ( u < 0.666 ) then !  DEATH +++++++++++++++++++++++++++++++++++++++++
 
-            
-        elseif (u<0.666) then !  DEATH +++++++++++++++++++++++++++++++++++++++++
-            death=1
-            if (s>burn_in) PD=PD+1
-            out = 1
-            k_prop = k-1
+death = 1
+if ( s > burn_in) PD = PD + 1
+out = 1
+k_prop = k-1
 
-            if (k_prop<k_min) out=0
+if (k_prop<k_min) out=0
 
-            if (out == 1) then
-                CALL RANDOM_NUMBER( RAND(1))
-                ind=ceiling(RAND(1)*k)
-                pt_death(1:2) = pt(ind,1:2)
+if (out == 1) then
+CALL RANDOM_NUMBER( RAND(1))
+ind=ceiling(RAND(1)*k)
+pt_death(1:2) = pt(ind,1:2)
 ! remove point to be deleted, shifting everything to the left.
-                pt_prop(1:ind-1,1:2)=pt(1:ind-1,1:2)
-                pt_prop(ind:k-1,1:2) = pt(ind+1:k,1:2)
-                
-                !GET prob
+pt_prop(1:ind-1,1:2)=pt(1:ind-1,1:2)
+pt_prop(ind:k-1,1:2) = pt(ind+1:k,1:2)
+
+!GET prob
 !interpolate to find magnitude of current state as needed by birth
 
-CALL Find_linear_interpolated_values(k_prop, x_min, x_max, pt_prop, endpt_prop, 1, pt_death(1:1), interpolated_signal)
+CALL Find_linear_interpolated_values(k_prop, x_min, x_max, pt_prop, endpt_prop, &
+1, pt_death(1:1), interpolated_signal)
 
+prob = 1.0_8/(sigma_birth*sqrt(2.0_8*pi))  * &
+exp(-(interpolated_signal(1)-pt_death(2))**2/(2.0_8*sigma_birth**2))
 
-prob=1.0_8/(sigma_birth*sqrt(2.0_8*pi))  *  exp(-(interpolated_signal(1)-pt_death(2))**2/(2.0_8*sigma_birth**2))
-                
-            endif !if (out==1)
+endif !if (out==1)
 
-        else ! MOVE +++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            if (s>burn_in) PP=PP+1
-            move=1
-            k_prop = k
-            CALL RANDOM_NUMBER( RAND(1:2))
-            ind=ceiling(RAND(1)*k)
-            if(k > 0) then ! If there are no points to move, then we can't move any
-            pt_prop(ind,1) = pt(ind,1)+randn()*sigma_move         !Normal distribution of move destination
-            else
-            pt_prop = pt
-            endif  ! 
-            !pt_prop(ind,1) = D_MIN + RAND(2) * (D_MAX - D_MIN)  !Uniform distribution of move destination
-            !Check BOUNDS
-            out=1
-            if ((pt_prop(ind,1)>D_max) .OR. (pt_prop(ind,1)<D_min))  out=0
+else ! MOVE +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+if (s > burn_in ) PP = PP + 1
+move = 1
+k_prop = k
+CALL RANDOM_NUMBER( RAND(1:2))
+ind=ceiling(RAND(1)*k)
+if(k > 0) then ! If there are no points to move, then we can't move any
+pt_prop(ind,1) = pt(ind,1)+randn()*sigma_move         !Normal distribution of move destination
+else
+pt_prop = pt
+endif  !
+!pt_prop(ind,1) = D_MIN + RAND(2) * (D_MAX - D_MIN)  !Uniform distribution of move destination
+!Check BOUNDS
+out = 1
+if ( (pt_prop(ind,1) > D_max) .OR. (pt_prop(ind,1) < D_min) )  out = 0
 
 !! check that all the time-points are different:
 DO WHILE ( CHECK_DIFFERENT( X_MIN, X_MAX, pt_prop(1:k,1)) .EQ. 1)
@@ -452,16 +458,14 @@ pt_prop(1:k_prop,1:2) = pts_new(:,:)
 
 DEALLOCATE (ORDER, pts_new)
 
-
-
-
 endif
 
+!======================================================================
 else !every 3rd iteration change the ages
+!======================================================================
 !select an age at random between 1 and size(AGE_INDICES)
 
-
-if (s>burn_in) PA=PA+1
+if (s>burn_in) PA = PA + 1
 num_age_changes = MAX(1,floor(SIZE(AGE_INDICES)/age_frac) )
 
 AGE_FACTOR_FOR_PRIOR = 1.0d0
@@ -502,12 +506,13 @@ IF( AGE_DISTRIBUTION(i_age2) == 'U' .OR. AGE_DISTRIBUTION(i_age2) == 'u') THEN
 ! Discard age proposal if it lies outside of the uniform bounds:
 IF( age_prop(i_age2) > MIDPOINT_AGE(i_age2) + DELTA_AGE(i_age2) .OR. age_prop(i_age2) < MIDPOINT_AGE(i_age2) - DELTA_AGE(i_age2)) out = 0
 ELSE !normal distirbution
-AGE_FACTOR_FOR_PRIOR = AGE_FACTOR_FOR_PRIOR * exp(-0.5 * (age_prop(i_age2) - MIDPOINT_AGE(i_age2))**2 / DELTA_AGE(i_age)**2) / exp(-0.5 * (age(i_age2) - MIDPOINT_AGE(i_age2))**2 / DELTA_AGE(i_age)**2)
+AGE_FACTOR_FOR_PRIOR = AGE_FACTOR_FOR_PRIOR * exp(-0.5 * (age_prop(i_age2) - MIDPOINT_AGE(i_age2))**2 / DELTA_AGE(i_age)**2) &
+/ exp(-0.5 * (age(i_age2) - MIDPOINT_AGE(i_age2))**2 / DELTA_AGE(i_age)**2)
 ENDIF
 
 ! Check to make sure that the ages do not extend past the model ends. For then we can't compute the likelihood.
-IF( age_prop(i_age2) < D_MIN) out = 0! THEN; PRINT*, 'PROPOSED AGE < DMIN'; STOP; ENDIF
-IF( age_prop(i_age2) > D_MAX) out = 0! THEN; PRINT*, 'PROPOSED AGE > DMAX'; PRINT*, 'AGE INDEX = ', i_age2, ' PROPOSED AGE = ', age_prop(i_age2); PRINT*,' MIDPOINT AGE IS ', MIDPOINT_AGE(i_age2), ' RANDOM PERTURB SCALING ', RAND(1); STOP; ENDIF
+IF( age_prop(i_age2) < D_MIN ) out = 0! THEN; PRINT*, 'PROPOSED AGE < DMIN'; STOP; ENDIF
+IF( age_prop(i_age2) > D_MAX ) out = 0! THEN; PRINT*, 'PROPOSED AGE > DMAX'; PRINT*, 'AGE INDEX = ', i_age2, ' PROPOSED AGE = ', age_prop(i_age2); PRINT*,' MIDPOINT AGE IS ', MIDPOINT_AGE(i_age2), ' RANDOM PERTURB SCALING ', RAND(1); STOP; ENDIF
 !alter age model.
 change_age = 1  !the acceptance probability is the same for MOVE
 ENDDO
@@ -517,15 +522,14 @@ IF( .NOT. CHECK_STRATIFICATION(AGE_PROP, STRATIFIED, STRATIFICATION_INDEX, STRAT
 
 ENDIF ! decide on what proposal to make
 !----------------------------------------------------------------------
-    
+
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    ! COMPUTE MISFIT OF THE PROPOSED MODEL
-    ! If the proposed model is not outside the bounds of the uniform prior,
-    ! compute its misfit : "like_prop"
-    if (out==1)  then
-    like_prop=0.0_8
-
+! COMPUTE MISFIT OF THE PROPOSED MODEL
+! If the proposed model is not outside the bounds of the uniform prior,
+! compute its misfit : "like_prop"
+if (out == 1)  then
+like_prop = 0.0_8
 CALL Find_linear_interpolated_values( k_prop, x_min, x_max, pt_prop, endpt_prop, NUM_DATA, age_prop, interpolated_signal)
 
 IF( RUNNING_MODE .eq. 1) THEN
@@ -536,83 +540,80 @@ else
 like_prop = 1.0_8
 endif
 
+endif !if (out==1)
 
 
-    endif !if (out==1)
-    
-       
-    
+
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ! %% SEE WHETHER MODEL IS ACCEPTED
-    
-    accept=0
-    alpha = 0
-    ! The acceptance term takes different
-    ! values according the the proposal that has been made.
-    
-    if (birth==1) then
-        if(out ==1) alpha = ((1.0_8/((I_max-I_min)*prob))*exp(-like_prop+like))
-        CALL RANDOM_NUMBER( RAND(1))
-        if (RAND(1) <alpha) THEN
-            accept=1
-if (s>burn_in) AB=AB+1!; PRINT*,like_prop,like
-        endif
-    elseif (death==1) then
-        if(out == 1) alpha = ((I_max-I_min)*prob)*exp(-like_prop+like)
-        CALL RANDOM_NUMBER( RAND(1))
-        if (RAND(1)<alpha) then
-            accept=1
-            if (s>burn_in) AD=AD+1
-        endif
-        
-    else ! NO JUMP, i.e no change in dimension
-        if(out ==1) alpha = exp(-like_prop+like) * AGE_FACTOR_FOR_PRIOR
-        CALL RANDOM_NUMBER( RAND(1))
-        if (RAND(1)<alpha) then
-            accept=1
-            if (s>burn_in) then
-                if (change_value .eq. 1) then
-                    ACV=ACV+1
-                elseif( move .eq. 1) then
-                    AP=AP+1
-                elseif( change_age .eq. 1) then
-                    AA = AA + 1
-                else
-                PRINT*, 'FATAL ERROR 1'; stop
-                endif
-            endif !if (s>burn_in)
 
-        endif
-    endif
+accept = 0
+alpha = 0
+! The acceptance term takes different
+! values according the the proposal that has been made.
+
+if (birth == 1) then
+if(out ==1) alpha = ((1.0_8/((I_max-I_min)*prob))*exp(-like_prop+like))
+CALL RANDOM_NUMBER( RAND(1))
+if (RAND(1) < alpha) THEN
+accept = 1
+if ( s > burn_in) AB = AB + 1!; PRINT*,like_prop,like
+endif
+elseif (death==1) then
+if(out == 1) alpha = ((I_max-I_min)*prob)*exp(-like_prop+like)
+CALL RANDOM_NUMBER( RAND(1))
+if (RAND(1)<alpha) then
+accept=1
+if (s>burn_in) AD = AD + 1
+endif
+else ! NO JUMP, i.e no change in dimension
+if(out ==1) alpha = exp(-like_prop+like) * AGE_FACTOR_FOR_PRIOR
+CALL RANDOM_NUMBER( RAND(1))
+if (RAND(1)<alpha) then
+accept=1
+if (s > burn_in) then
+if ( change_value .eq. 1) then
+ACV = ACV + 1
+elseif( move .eq. 1) then
+AP = AP + 1
+elseif( change_age .eq. 1) then
+AA = AA + 1
+else
+PRINT*, 'FATAL ERROR 1'; stop
+endif
+endif !if (s>burn_in)
+endif
+endif
 
 ! If accept, update the values
-    if (accept==1) then
-        k=k_prop
-        pt=pt_prop
-        like=like_prop
-        endpt = endpt_prop
-        age = age_prop
-    endif
+if (accept == 1 ) then
+k = k_prop
+pt = pt_prop
+like = like_prop
+endpt = endpt_prop
+age = age_prop
+endif
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    ! Collect samples for the ensemble solution
+! Collect samples for the ensemble solution
 
-    if (s>burn_in .AND. mod(s-burn_in,thin)==0) THEN
-            b=b+1
+if ( s > burn_in .AND. mod( s-burn_in, thin) == 0 ) THEN
+
+b = b + 1
+!       if (mod (b,10) == 0) write(output_unit, fmt=*) 'b = ', b
 
 IF( FREQ_WRITE_JOINT_DISTRIB > 0) THEN
-IF( s>burn_in .AND. mod(s-burn_in,thin * FREQ_WRITE_JOINT_DISTRIB) == 0) THEN
-
-call Find_linear_interpolated_values( k, x_min, x_max, pt, endpt, discretise_size, age(1:NUM_DATA), interpolated_signal(1:NUM_DATA) )
+IF( s > burn_in .AND. mod(s-burn_in,thin * FREQ_WRITE_JOINT_DISTRIB) == 0) THEN
+call Find_linear_interpolated_values( k, x_min, x_max, pt, endpt, discretise_size, &
+age(1:NUM_DATA), interpolated_signal(1:NUM_DATA) )
 Do i=1,NUM_DATA
 WRITE(30+i,*) REAL(age(i), KIND = 4), REAL(interpolated_signal(i),KIND = 4)
 ENDDO
-
 ENDIF
 ENDIF
 
-
-    CALL Find_linear_interpolated_values( k, x_min, x_max, pt, endpt, discretise_size, x(1:discretise_size), interpolated_signal)
+CALL Find_linear_interpolated_values( k, x_min, x_max, pt, endpt, discretise_size, &
+x(1:discretise_size), interpolated_signal)
 
 ! dFdt
 ! Since the models are piecewise linear, we take a small step size to compute the local gradient.
@@ -620,12 +621,13 @@ ENDIF
 
 CALL Find_linear_interpolated_values( k, x_min, x_max, pt, endpt, discretise_size, x(1:discretise_size), interpolated_signal)
 CALL Find_linear_interpolated_values( k, x_min, x_max, pt, endpt, discretise_size, x(1:discretise_size)+1e-6, interpolated_signal_grad)
-interpolated_signal_grad = (interpolated_signal_grad - interpolated_signal)/1e-6
+interpolated_signal_grad = (interpolated_signal_grad - interpolated_signal)/1.e-6
 
 
-    IF( FREQ_WRITE_MODELS > 0) then
-    if( s>burn_in .AND. mod(s-burn_in,thin * FREQ_WRITE_MODELS) == 0) WRITE(15,'(F10.3)') (interpolated_signal(i),i=1, discretise_size)
-    ENDIF
+IF( FREQ_WRITE_MODELS > 0) then
+if( s>burn_in .AND. mod(s-burn_in,thin * FREQ_WRITE_MODELS) == 0) &
+WRITE(unit=unit_write_models,fmt='(F10.3)') (interpolated_signal(i),i=1, discretise_size)
+ENDIF
 
 
 ! CALL Find_linear_interpolated_values( k, x_min, x_max, pt, endpt, discretise_size, x(1:discretise_size), interpolated_signal)
@@ -635,7 +637,7 @@ RETURN_INFO%AV(:)=RETURN_INFO%AV(:)+interpolated_signal(1:discretise_size)
 RETURN_INFO%AV_DFDT(:)=RETURN_INFO%AV_DFDT(:)+interpolated_signal_grad(1:discretise_size)
 
 ! build marginal distribution for ages:
-DO i=1,NUM_DATA
+DO i = 1,NUM_DATA
 IF( AGE_DISTRIBUTION(i) == 'U' .OR. AGE_DISTRIBUTION(i) == 'u') THEN
 BIN_INDEX = FLOOR( (age(i)-(MIDPOINT_AGE(i)-DELTA_AGE(i)))/DELTA_AGE(i)/2.0_8 * NBINS ) + 1
 ELSE
@@ -649,7 +651,6 @@ if(BIN_INDEX < 0) then; print*, i, age(i), MIDPOINT_AGE(i), DELTA_AGE(i), nbins;
 RETURN_INFO%MARGINAL_AGES(BIN_INDEX,i) = RETURN_INFO%MARGINAL_AGES(BIN_INDEX,i) + 1
 enddo
 
-
 ! build marginal intensity density
 DO i=1,discretise_size
 BIN_INDEX = FLOOR( (interpolated_signal(i)-I_MIN)/REAL(I_MAX-I_MIN, KIND = 8) * NBINS ) + 1
@@ -662,12 +663,10 @@ ENDIF
 discrete_history(i,BIN_INDEX) = discrete_history(i,BIN_INDEX) + 1
 enddo
 
-
-
 IF ( CALC_CREDIBLE ) THEN
 ! Credible interval
 
- do i=1,discretise_size
+do i=1 , discretise_size
 
 ! Do the (e.g.) 95% credible interval by keeping the lowest and greatest 2.5% of
 ! all models at each sample point. We could either keep ALL the data and at
@@ -686,38 +685,32 @@ IF ( CALC_CREDIBLE ) THEN
 ! Interestingly, this is by far the speed-bottleneck in the algorithm. As the algorithm progresses, the credible intervals converge and the
 ! tails need not be changed very much. This leads to an increase in speed of the algorithm as the iteration count increases.
 
-                if (b<=num) then
-                    MINI(i,b)=interpolated_signal(i)
-                    MAXI(i,b)=interpolated_signal(i)
-                    if (b==num) then
+if (b<=num) then
+MINI(i,b) = interpolated_signal(i)
+MAXI(i,b) = interpolated_signal(i)
+if (b == num) then
 val_min(i) = MINVAL(MAXI(i,:) ); ind_min(i:i) = MINLOC( MAXI(i,:) )
 val_max(i) = MAXVAL(MINI(i,:) ); ind_max(i:i) = MAXLOC( MINI(i,:) )
-
-                    endif
-                    
-                else
-                    if (interpolated_signal(i)>val_min(i)) then
-                        MAXI(i,ind_min(i))=interpolated_signal(i);
-                     val_min(i) = MINVAL(MAXI(i,:) ); ind_min(i:i) = MINLOC( MAXI(i,:) )
-                    endif
-                    if (interpolated_signal(i)<val_max(i)) then
-                        MINI(i,ind_max(i))=interpolated_signal(i)
+endif
+else
+if (interpolated_signal(i)>val_min(i)) then
+MAXI(i,ind_min(i))=interpolated_signal(i);
+val_min(i) = MINVAL(MAXI(i,:) ); ind_min(i:i) = MINLOC( MAXI(i,:) )
+endif
+if (interpolated_signal(i)<val_max(i)) then
+MINI(i,ind_max(i))=interpolated_signal(i)
 val_max(i) = MAXVAL(MINI(i,:) ); ind_max(i:i) = MAXLOC( MINI(i,:) )
-                    endif
-                endif
-                
-
-
-! Credible interval for dFdt
-if (b<=num) then
-MINI_dFdt(i,b)=interpolated_signal_grad(i)
-MAXI_dFdt(i,b)=interpolated_signal_grad(i)
-if (b==num) then
-val_min_dFdt(i) = MINVAL(MAXI_dFdt(i,:) ); ind_min_dFdt(i:i) = MINLOC( MAXI_dFdt(i,:) )
-val_max_dFdt(i) = MAXVAL(MINI_dFdt(i,:) ); ind_max_dFdt(i:i) = MAXLOC( MINI_dFdt(i,:) )
-
+endif
 endif
 
+! Credible interval for dFdt
+if ( b <= num ) then
+MINI_dFdt(i,b)=interpolated_signal_grad(i)
+MAXI_dFdt(i,b)=interpolated_signal_grad(i)
+if ( b == num ) then
+val_min_dFdt(i) = MINVAL(MAXI_dFdt(i,:) ); ind_min_dFdt(i:i) = MINLOC( MAXI_dFdt(i,:) )
+val_max_dFdt(i) = MAXVAL(MINI_dFdt(i,:) ); ind_max_dFdt(i:i) = MAXLOC( MINI_dFdt(i,:) )
+endif
 else
 if (interpolated_signal_grad(i)>val_min_dFdt(i)) then
 MAXI_dFdt(i,ind_min_dFdt(i))=interpolated_signal_grad(i);
@@ -731,34 +724,34 @@ endif
 
 enddo !i
 
-
- ENDIF !CALC_CREDIBLE
+ENDIF !CALC_CREDIBLE
 
 
 ! Build histogram of number of changepoints: k
-            RETURN_INFO%n_changepoint_hist(k)=RETURN_INFO%n_changepoint_hist(k) + 1
+RETURN_INFO%n_changepoint_hist(k)=RETURN_INFO%n_changepoint_hist(k) + 1
 
 
 !Do the histogram on change points
-            do i = 1,k
-                bb=bb+1
-                RETURN_INFO%change_points(bb)=pt(i,1)
-            enddo
+!  af output changepoints in ascii file
+do i = 1,k
+!               bb=bb+1
+write(unit=RETURN_INFO%output_changepoints_unit, fmt='(F10.3)') pt(i,1)
+!               RETURN_INFO%change_points(bb)=pt(i,1)
+enddo
 
-    endif !if burn-in
-    
-    RETURN_INFO%convergence(s)=like  ! Convergence of the misfit
-    
-    ! Get the best model
-    if (like<like_best) then
-        pt_best = pt
-        k_best = k
-        endpt_best = endpt
-        like_best = like
-    endif
-    
+endif !if burn-in
+
+RETURN_INFO%convergence(s) = like  ! Convergence of the misfit
+
+! Get the best model
+if ( like < like_best ) then
+pt_best = pt
+k_best = k
+endpt_best = endpt
+like_best = like
+endif
+
 enddo ! the Sampling of the mcmc
-
 
 ! Compute the average
 RETURN_INFO%AV(:)=RETURN_INFO%AV(:)/b
@@ -812,14 +805,14 @@ enddo
 
 RETURN_INFO%MAX_NUMBER_CHANGE_POINTS_HISTORY = bb
 
-IF( FREQ_WRITE_MODELS > 0) CLOSE(15)
+IF( FREQ_WRITE_MODELS > 0) CLOSE(unit=unit_write_models)
 
 
 IF( FREQ_WRITE_JOINT_DISTRIB > 0) THEN
 
-   DO i=1,NUM_DATA
-   CLOSE(30+i)
-   ENDDO
+DO i=1,NUM_DATA
+CLOSE(30+i)
+ENDDO
 
 ENDIF
 
@@ -1150,7 +1143,7 @@ IF( MAXVAL(STRATIFICATION) .EQ. 0) RETURN !early return if we don't need to chec
 
 ! Check that the age direction is defined - we need to know whether the sequence is decreasing or increasing in age.
 IF( STRATIFICATION_AGE_DIRECTION  == 0) THEN
-PRINT*, 'NO AGE DIRECTION DETERMINED'
+write(error_unit,fmt=*) 'NO AGE DIRECTION DETERMINED'
 STOP
 ENDIF
 
@@ -1177,8 +1170,6 @@ IF (STRATIFICATION_AGE_DIRECTION == AGE_DESCENDING .AND. ages(I) < ages(J) ) THE
 CHECK_STRATIFICATION = .FALSE.
 RETURN
 ENDIF
-
-
 ENDDO
 ENDDO
 

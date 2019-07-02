@@ -87,3 +87,9 @@ ax.yaxis.set_tick_params(labelsize=16)
 plt.savefig('Posterior_with_shifted_data.pdf', bbox_inches='tight',pad_inches=0.4)
 plt.close(fig2)
 
+f= open("Posterior_ages.txt","w+")
+for index in range(len(x)):
+	f.write("%f %f\n" %(new_age[index],new_intensity[index]))
+f.close()
+
+

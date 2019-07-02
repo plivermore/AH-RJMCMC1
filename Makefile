@@ -1,6 +1,6 @@
 #Choose your favourite Fortran90 compiler here:
-F90=ifort
-#F90=gfortran -ffree-line-length-0
+#F90=ifort
+F90=gfortran -O3 -ffast-math -ffree-line-length-0
 
 
 source=Fortran_source
