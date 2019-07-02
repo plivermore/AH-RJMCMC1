@@ -6,20 +6,21 @@
 Original release; produces the figures in the paper 
 https://academic.oup.com/gji/article/215/3/2008/5101441.
 
-**Version 2: Revised Jan 28th 2019**
+**Version 2: Revised July 2nd 2019**
 
 Includes:  sampling of the ages from a normal distribution based on their current values, rather than directly from the prior. This speeds up convergence.
 Increased flexibility in the type of data that can be read, including data files describing samples whose ages are a mixture of normal and uniform distributions; data types (in particular, brick samples with the same sample ID are not independent and are always defined with the same age); stratification of data.
 Python version of the code is removed.
+On-the-fly saving of some diagnostics to increase speed.
 
 Authors: 
 Phil Livermore (University of Leeds)
 Alex Fournier (Institut de Physique du Globe de Paris, Paris)
 Thomas Bodin (Universite Lyon, Lyon)
 
-Maintained by Phil Livermore
+Maintained by Phil Livermore, Alex Fournier
 
-Last update: April 17th 2019
+Last update: July 2nd 2019
 
 ## Overview
 
