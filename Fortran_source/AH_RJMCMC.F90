@@ -261,11 +261,11 @@ ENDIF
 ENDDO
 ELSE  !either no stratification, or only a single dataset is specified without the 'a' notation. In either case, set all elements of stratification_index to 'a'
 if ( strat_col .NE. -1) then
-write(ERROR_UNIT,fmt="(a)") 'here'
-write(ERROR_UNIT,*) stratification_read_line(1:num_data)
+! write(ERROR_UNIT,fmt="(a)") 'here'
+! write(ERROR_UNIT,*) stratification_read_line(1:num_data)
 DO I = 1, NUM_DATA
 !af
-write(output_unit,*) stratification_read_line(i)
+!write(output_unit,*) stratification_read_line(i)
 READ( stratification_read_line(i), *) STRATIFICATION(I)
 ENDDO
 stratification_index(1:NUM_DATA) = 'a'
