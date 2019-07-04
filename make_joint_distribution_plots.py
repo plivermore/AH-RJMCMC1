@@ -78,14 +78,15 @@ if 'true_behaviour_file' in locals(): g.ax_joint.plot(true_pt[0],true_pt[1],'^',
 #plot histogram of age prior:
 g.ax_marg_x.bar(noisy_pt[0]-errs[0],height=np.shape(dist)[0]/num_bins,width=2.*errs[0],alpha=0.5,color='darkorange',align='edge')
 
-y_plot_range = max(errs[1]+1,7)
+y_plot_range = 3 * errs[1] #max(errs[1]+1,7)
 x_plot_range = errs[0]+5
 
-g.ax_joint.set_ylim([min(dist[:,1].min()-2,noisy_pt[1]-y_plot_range),max(dist[:,1].max()+2,noisy_pt[1]+y_plot_range)])
+g.ax_joint.set_ylim([min(dist[:,1].min(),noisy_pt[1]-y_plot_range),max(dist[:,1].max(),noisy_pt[1]+y_plot_range)])
 g.ax_joint.set_xlim([noisy_pt[0]-x_plot_range,noisy_pt[0]+x_plot_range])
 
 #plot histogram of intensity 'prior':
 sigma = errs[1]
+
 mu = noisy_pt[1]
 q = np.linspace(mu - 4 * sigma, mu + 4 * sigma,1000)
 curve = 1/(sigma * np.sqrt(2 * np.pi)) * np.exp( - (q - mu)**2 / (2 * sigma**2))

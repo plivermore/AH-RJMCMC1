@@ -37,6 +37,9 @@ for line in open('input_file','r'):
             x_cts_true,y_cts_true=np.loadtxt(os.path.join(os.pardir,true_behaviour_file),unpack=True)
         if line.split()[0].upper() == 'Plotting_intensity_range'.upper():
             I_min,I_max =  float(line.split()[1]),float(line.split()[2])
+# overwrite age limits by plotting information if given in the inputfile
+        if line.split()[0].upper() == 'Plotting_age_range'.upper():
+            age_min, age_max =  float(line.split()[1]),float(line.split()[2])
         if line.split()[0].upper() == 'Burn_in'.upper():
             Burn_in = int(line.split()[1])
 # read in the various data files that were output by the RJ-MCMC script
