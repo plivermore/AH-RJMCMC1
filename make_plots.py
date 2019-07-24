@@ -478,3 +478,18 @@ ax1.legend(loc = 'lower right',fontsize=12,labelspacing=0.2)
 ax1.set_ylim([-2,2])
 plt.savefig('dFdt.pdf', bbox_inches='tight',pad_inches=0.0)
 plt.close(fig1)
+
+
+# Make a plot of the histogram of the intensity sd scaling factor:
+print('Building plot of sd scaling factor ...')
+sd = np.loadtxt('Joint_distribution_data/sd_factor.dat', unpack=True)
+fig3, ax = plt.subplots (figsize=(8,5))
+ax.hist(sd,num_bins,density=True)
+
+ax.set_title('Error budget scaling factor histogram',fontsize=16)
+ax.set_xlabel('Scaling factor',fontsize=16)
+ax.set_ylabel('Discrete probability',fontsize=16)
+ax.xaxis.set_tick_params(labelsize=16)
+ax.yaxis.set_tick_params(labelsize=16)
+plt.savefig('sd_histogram.pdf', bbox_inches='tight',pad_inches=0.4)
+plt.close(fig3)

@@ -22,7 +22,7 @@ NUM_DATA, IOS, K_MAX_ARRAY_BOUND, s, ind, NBINS, I_MODEL, FREQ_WRITE_MODELS, FRE
 INTEGER :: input_random_seed
 
 REAL( KIND = 8) :: I_MAX, I_MIN, sigma_move, sigma_change_value, sigma_age, sigma_birth, int_j,&
-X_MIN, X_MAX, age_frac
+X_MIN, X_MAX, age_frac, sd_uncertain_bound, sd_sigma, sd_fraction
 
 INTEGER :: AGE_INDEX(1 : MAX_DATA), NUM_AGE_PARAMETERS
 CHARACTER(len=100), Allocatable :: LINE_READ(:)
@@ -73,6 +73,7 @@ ENDIF
 
 !default
 input_random_seed = 1
+sd_uncertain_bound = -1
 
 DO
 READ(30,'(A)',END=101) inputline
@@ -97,6 +98,9 @@ IF ( to_upper(inputline(1:len('output_joint_distribution_freq'))) == to_upper('o
 IF ( to_upper(inputline(1:len('Credible'))) == to_upper('Credible') ) read(inputline(len('Credible')+2:),*) Credible
 IF ( to_upper(inputline(1:len('Outputs_directory'))) == to_upper('Outputs_directory') ) read(inputline(len('Outputs_directory')+2:),'(A)') outputs_directory
 IF ( to_upper(inputline(1:len('SEED'))) == to_upper('SEED') ) read(inputline(len('SEED')+2:),*) input_random_seed
+IF ( to_upper(inputline(1:len('Sigma_uncertain'))) == to_upper('Sigma_uncertain') ) read(inputline(len('Sigma_uncertain')+2:),*) sd_uncertain_bound, sd_sigma, sd_fraction
+
+
 ENDDO
 101     CONTINUE
 
@@ -335,7 +339,7 @@ CALC_CREDIBLE = .TRUE.
 
 ! copy input file
 call system('cp '//TRIM(ARG)//' '//TRIM(Outputs_directory)//'/input_file')
-CALL RJMCMC(burn_in, NUM_DATA, age(1:NUM_DATA), delta_age(1:NUM_DATA), intensity(1:NUM_DATA), delta_intensity(1:NUM_DATA), stratification(1: NUM_DATA), STRATIFICATION_INDEX(1:NUM_DATA), AGE_DISTRIBUTION(1:NUM_DATA), AGE_INDEX(1:NUM_AGE_PARAMETERS), NSAMPLE, I_MIN, I_MAX, X_MIN, X_MAX, K_MIN, K_MAX, SIGMA_MOVE, sigma_change_value, sigma_birth, sigma_age, age_frac, discretise_size, SHOW, THIN, NBINS, RETURN_INFO, CALC_CREDIBLE, FREQ_WRITE_MODELS, WRITE_MODEL_FILE_NAME, FREQ_WRITE_JOINT_DISTRIB,   credible, Outputs_directory)
+CALL RJMCMC(burn_in, NUM_DATA, age(1:NUM_DATA), delta_age(1:NUM_DATA), intensity(1:NUM_DATA), delta_intensity(1:NUM_DATA), stratification(1: NUM_DATA), STRATIFICATION_INDEX(1:NUM_DATA), AGE_DISTRIBUTION(1:NUM_DATA), AGE_INDEX(1:NUM_AGE_PARAMETERS), NSAMPLE, I_MIN, I_MAX, X_MIN, X_MAX, K_MIN, K_MAX, SIGMA_MOVE, sigma_change_value, sigma_birth, sigma_age, age_frac, discretise_size, SHOW, THIN, NBINS, RETURN_INFO, CALC_CREDIBLE, FREQ_WRITE_MODELS, WRITE_MODEL_FILE_NAME, FREQ_WRITE_JOINT_DISTRIB,   credible, Outputs_directory, sd_uncertain_bound, sd_sigma, sd_fraction)
 
 
 

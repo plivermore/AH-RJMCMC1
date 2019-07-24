@@ -33,7 +33,7 @@ REAL( KIND = 8), PARAMETER :: PI = 3.14159265358979_8
 INTEGER :: RUNNING_MODE
 
 CONTAINS
-SUBROUTINE RJMCMC(burn_in, NUM_DATA, MIDPOINT_AGE, DELTA_AGE, INTENSITY, I_SD, STRATIFIED, STRATIFICATION_INDEX, AGE_DISTRIBUTION, AGE_INDICES, NSAMPLE, I_MIN, I_MAX, X_MIN, X_MAX, K_MIN, K_MAX, SIGMA_MOVE, sigma_change_value, sigma_birth, sigma_age, age_frac, discretise_size, SHOW, THIN, NBINS, RETURN_INFO, CALC_CREDIBLE, FREQ_WRITE_MODELS, WRITE_MODEL_FILE_NAME, FREQ_WRITE_JOINT_DISTRIB, credible, Outputs_directory)
+SUBROUTINE RJMCMC(burn_in, NUM_DATA, MIDPOINT_AGE, DELTA_AGE, INTENSITY, I_SD, STRATIFIED, STRATIFICATION_INDEX, AGE_DISTRIBUTION, AGE_INDICES, NSAMPLE, I_MIN, I_MAX, X_MIN, X_MAX, K_MIN, K_MAX, SIGMA_MOVE, sigma_change_value, sigma_birth, sigma_age, age_frac, discretise_size, SHOW, THIN, NBINS, RETURN_INFO, CALC_CREDIBLE, FREQ_WRITE_MODELS, WRITE_MODEL_FILE_NAME, FREQ_WRITE_JOINT_DISTRIB, credible, Outputs_directory, sd_uncertain_bound, sd_sigma, sd_fraction)
 
 
 IMPLICIT NONE
@@ -42,7 +42,7 @@ CHARACTER(*) :: Outputs_directory
 INTEGER :: I, K, BURN_IN, NSAMPLE, K_INIT, K_MAX, K_MIN, K_MAX_ARRAYBOUND, discretise_size, show, thin, num, J, &
 NUM_DATA, K_MAX_ARRAY_BOUND, s, birth, death, move, ind, k_prop, accept, k_best, out, &
 NBINS, BIN_INDEX, IS_DIFF, CHANGE_AGE, CHANGE_value, i_age, FREQ_WRITE_MODELS, IOS, &
-FREQ_WRITE_JOINT_DISTRIB, SAMPLE_INDEX_JOINT_DISTRIBUTION
+FREQ_WRITE_JOINT_DISTRIB, SAMPLE_INDEX_JOINT_DISTRIBUTION, change_sd_factor
 REAL( KIND = 8) :: D_MIN, D_MAX, I_MAX, I_MIN, sigma_move, sigma_change_value, &
 sigma_birth, sigma_age, like_prop, prob, INT_J, pt_death(2), &
 X_MIN, X_MAX, U, RAND(2), alpha, TEMP_RAND, AGE_FACTOR_FOR_PRIOR
@@ -50,11 +50,11 @@ CHARACTER(300) :: WRITE_MODEL_FILE_NAME, format_descriptor, FILENAME
 CHARACTER(1) :: AGE_DISTRIBUTION(:)
 CHARACTER :: STRATIFICATION_INDEX(1:NUM_DATA)
 INTEGER, ALLOCATABLE :: ORDER(:)
-REAL( KIND = 8) :: ENDPT_BEST(2), age_frac, credible, age1, age2
-
+REAL( KIND = 8) :: ENDPT_BEST(2), age_frac, credible, age1, age2, sd_uncertain_bound, sd_sigma, sd_fraction
+REAL( KIND = 8) :: sd_factor, sd_factor_prop
 INTEGER :: AGE_INDICES(:), MAX_AGE_INDEX, i_age2
 
-INTEGER :: b, bb, AB, AD, PD, PB, ACV, PCV, AP, PP, PA, AA, num_age_changes, &
+INTEGER :: b, bb, AB, AD, PD, PB, ACV, PCV, AP, PP, PA, AA, num_age_changes, P_sd, A_sd,&
 STRATIFIED(:), STRATIFICATION_AGE_DIRECTION
 REAL( KIND = 8) :: MIDPOINT_AGE(:), DELTA_AGE(:), Intensity(:), I_sd(:), ENDPT(2), ENDPT_PROP(2), like, like_best, like_init
 REAL( KIND = 8), ALLOCATABLE :: VAL_MIN(:), VAL_MAX(:),   MINI(:,:), MAXI(:,:), PT(:,:), PT_PROP(:,:)
@@ -157,6 +157,15 @@ PRINT*,' FAILED ON FILENAME ', TRIM(FILENAME)
 STOP
 ENDIF
 ENDDO
+
+WRITE(FILENAME,'(A,A)') TRIM(Outputs_directory),'/Joint_distribution_data/sd_factor.dat'
+OPEN(30+NUM_DATA+1, FILE = FILENAME, STATUS = 'REPLACE', FORM = 'FORMATTED', IOSTAT = IOS)
+IF( IOS .NE. 0) THEN
+PRINT*, 'CANNOT OPEN FILES FOR WRITING JOINT_DISTRIBUTION DATA'
+PRINT*,' FAILED ON FILENAME ', TRIM(FILENAME)
+STOP
+ENDIF
+
 ENDIF
 
 k_best = -10
@@ -189,6 +198,8 @@ PCV=0
 AP=0
 PP=0
 PA = 0
+P_sd = 0
+A_sd = 0
 AA = 0
 RETURN_INFO%best(:) = 0.0_8
 RETURN_INFO%AV(:) = 0.0_8
@@ -209,6 +220,8 @@ IF(MINVAL( DELTA_AGE(1:NUM_DATA)) .eq. 0.0_8) THEN
 PRINT*,'MIN AGE ERROR IS 0, INCOMPATITBLE WITH ASSUMPTIONS BUILT INTO CODE'
 STOP
 ENDIF
+
+
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ! Initialize - Define randomly the first model of the chain
 CALL RANDOM_NUMBER( RAND(1))
@@ -275,6 +288,8 @@ CALL Find_linear_interpolated_values( k, x_min, x_max, pt, endpt, NUM_DATA, age,
 ALLOCATE( interpolated_signal_grad(1:max(NUM_DATA,discretise_size)) ) !generic output space for interpolation.
 
 IF( RUNNING_MODE .eq. 1) THEN
+
+!compute assuming unscaled standard deviation
 do i=1,NUM_DATA
 like=like+(Intensity(i) - interpolated_signal(i))**2/(2.0_8 * I_sd(i)**2)
 enddo
@@ -285,6 +300,8 @@ endif
 like_best=like
 like_init=like
 
+sd_factor_prop = 1.0_8
+sd_factor = 1.0_8
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 !%%%%%%%%%%%%%%%%% START RJ-MCMC SAMPLING %%%%%%%%%%%%%%%%%
@@ -296,9 +313,13 @@ do s=1,nsample
 
 if (mod(s,show)==0 .AND. s>burn_in) then
 
+if (sd_uncertain_bound < 0) Then
 write(output_unit,'(A,i8,A,i3,5(A,F6.1),A,ES12.2)' ) 'Samples: ',s, ' Vertices: ',k, ' Acceptance: change F ', 100.0*ACV/PCV, &
 ' change age ', 100.0*AP/PP,  ' birth ', 100.0*AB/PB,' death ',100.0*AD/PD  ,' resample ages ', 100.0*AA/PA, ' likelihood ', like
-
+else
+write(output_unit,'(A,i8,A,i3,6(A,F6.1),A,ES12.2)' ) 'Samples: ',s, ' Vertices: ',k, ' Acceptance: change F ', 100.0*ACV/PCV, &
+' change age ', 100.0*AP/PP,  ' birth ', 100.0*AB/PB,' death ',100.0*AD/PD  ,' resample ages ', 100.0*AA/PA, ' sd rescale ', 100.0*A_sd/P_sd,' likelihood ', like
+endif
 endif
 
 
@@ -307,7 +328,9 @@ move  = 0
 death = 0
 change_age = 0
 change_value = 0
+change_sd_factor = 0
 
+sd_factor_prop = sd_factor
 age_prop = age
 pt_prop = pt
 endpt_prop = endpt
@@ -461,10 +484,25 @@ DEALLOCATE (ORDER, pts_new)
 endif
 
 !======================================================================
-else !every 3rd iteration change the ages
+else !every 3rd iteration change the ages/error budget
 !======================================================================
-!select an age at random between 1 and size(AGE_INDICES)
 
+CALL RANDOM_NUMBER( RAND(1))
+u = RAND(1)
+if(sd_uncertain_bound < 0) u = 0  !if not alter sd factor, set u = 0
+if( u < sd_fraction) THEN !prob sd_fraction of altering the sd factor. E.g. if sd_fraction = 0.9, then 90% of the time (for every 3rd iteration) it will alter the sd factor, and will alter the ages 10% of the time.
+
+
+change_sd_factor = 1
+
+if (s>burn_in) P_sd = P_sd + 1
+RAND(1) = randn()
+sd_factor_prop = sd_factor + RAND(1) * sd_sigma
+IF( sd_factor_prop < 0 ) out = 0
+IF( sd_factor_prop > sd_uncertain_bound ) out = 0
+
+else
+!select an age at random between 1 and size(AGE_INDICES)
 if (s>burn_in) PA = PA + 1
 num_age_changes = MAX(1,floor(SIZE(AGE_INDICES)/age_frac) )
 
@@ -519,7 +557,7 @@ ENDDO
 
 IF( .NOT. CHECK_STRATIFICATION(AGE_PROP, STRATIFIED, STRATIFICATION_INDEX, STRATIFICATION_AGE_DIRECTION,  NUM_DATA) ) out = 0
 
-
+ENDIF
 ENDIF ! decide on what proposal to make
 !----------------------------------------------------------------------
 
@@ -534,7 +572,8 @@ CALL Find_linear_interpolated_values( k_prop, x_min, x_max, pt_prop, endpt_prop,
 
 IF( RUNNING_MODE .eq. 1) THEN
 do i=1,NUM_DATA
-like_prop=like_prop+(Intensity(i) - interpolated_signal(i))**2/(2.0_8 * I_sd(i)**2)
+! sd_prop is set to 1 unless the error budget is sought as part of the inversion
+like_prop=like_prop+(Intensity(i) - interpolated_signal(i))**2/(2.0_8 * sd_factor_prop**2 * I_sd(i)**2)
 enddo
 else
 like_prop = 1.0_8
@@ -567,7 +606,7 @@ accept=1
 if (s>burn_in) AD = AD + 1
 endif
 else ! NO JUMP, i.e no change in dimension
-if(out ==1) alpha = exp(-like_prop+like) * AGE_FACTOR_FOR_PRIOR
+if(out ==1) alpha = exp(-like_prop+like) * AGE_FACTOR_FOR_PRIOR * (sd_factor/sd_factor_prop)**NUM_DATA   !this latter factor is the pre-factor in the normal distribution
 CALL RANDOM_NUMBER( RAND(1))
 if (RAND(1)<alpha) then
 accept=1
@@ -578,6 +617,8 @@ elseif( move .eq. 1) then
 AP = AP + 1
 elseif( change_age .eq. 1) then
 AA = AA + 1
+elseif (change_sd_factor .eq. 1) then
+A_sd = A_sd + 1
 else
 PRINT*, 'FATAL ERROR 1'; stop
 endif
@@ -592,6 +633,7 @@ pt = pt_prop
 like = like_prop
 endpt = endpt_prop
 age = age_prop
+sd_factor = sd_factor_prop
 endif
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -610,6 +652,10 @@ Do i=1,NUM_DATA
 WRITE(30+i,*) REAL(age(i), KIND = 4), REAL(interpolated_signal(i),KIND = 4)
 ENDDO
 ENDIF
+IF( s > burn_in .AND. mod(s-burn_in,thin) == 0) THEN  !write all the values of sd
+WRITE(30+NUM_DATA+1,*) REAL(sd_factor, KIND = 4)
+ENDIF
+
 ENDIF
 
 CALL Find_linear_interpolated_values( k, x_min, x_max, pt, endpt, discretise_size, &
@@ -813,6 +859,7 @@ IF( FREQ_WRITE_JOINT_DISTRIB > 0) THEN
 DO i=1,NUM_DATA
 CLOSE(30+i)
 ENDDO
+CLOSE(30+NUM_DATA+1)
 
 ENDIF
 

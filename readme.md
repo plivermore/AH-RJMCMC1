@@ -13,6 +13,9 @@ Increased flexibility in the type of data that can be read, including data files
 Python version of the code is removed.
 On-the-fly saving of some diagnostics to increase speed.
 
+**Version 3: Revised July 24th 2019**
+Includes: capability to invert also for a rescaled standard deviation of the intensity by an unknown constant (lambda), by including lambda in the list of hyper-parameters.
+
 Authors: 
 Phil Livermore (University of Leeds)
 Alex Fournier (Institut de Physique du Globe de Paris, Paris)
@@ -20,7 +23,7 @@ Thomas Bodin (Universite Lyon, Lyon)
 
 Maintained by Phil Livermore, Alex Fournier
 
-Last update: July 2nd 2019
+Last update: July 24th 2019
 
 ## Overview
 
@@ -62,6 +65,8 @@ Additionally:
 
 * Near East, Mixed type
 * Near East, Group Level
+* Paris-700, rescaled intensity error budget 
+ `input_sigma_uncertain_Paris700`
 
 ## Making figures
 
@@ -198,6 +203,23 @@ Used only by the plotting scripts. e.g.
 `Plotting_intensity_range 50 80`
 
 SEED: Seed the random number generator with seed integer n. The default value is 1.
+
+Batch\_generate\_joint\_distributions: compile a batch of joint age/intensity plots using the given column of the datafile. In the datafile, 1=make plot, 0 = exclude. E.g.
+`Batch_generate_joint_distributions 9`
+uses column 9 (must be 0 or 1) of the datafile to generate multiple figures at once.
+NB. This is entirely equivalent to generating each figure individually.
+
+Sigma\_uncertain: used to indicate sampling parameters for the rescaled intensity errors.
+Usage: `Sigma_uncertain uniform_bound sd_sigma sd_fraction`
+
+uniform\_bound: the rescaling value (lambda) has a prior of U[0, uniform\_bound]
+
+sd_sigma: at each proposal for which lambda is changed, the proposed value is taken from a normal distribution centred on the current value and whose standard deviation is sd\_sigma.
+
+sd\_fraction: For sampling of the hyperparameters (sample ages and lambda) this indicates the relative frequency of lambda perturbations. Each time hyperparameters are resampled, lambda is perturbed with probability sd\_fraction (0 <= sd\_fraction <= 1) 
+
+E.g.  `Sigma_uncertain 3 0.4 0.1`
+assumes a prior of U[0,3] for lambda, uses perturbations of standard deviation 0.4, and the hyper-parameter change move alters lambda 10% of the time, and so the ages 90% of the time.
 
 # The Data file
 ## Stratification
