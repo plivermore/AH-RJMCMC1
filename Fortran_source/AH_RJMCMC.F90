@@ -196,6 +196,7 @@ ENDIF
 
 ! Check to see that X_MIN and X_MAX enclose the data set:
 
+DO i = 1, NUM_DATA
 IF( to_upper(AGE_distribution(i)) == 'U') THEN
 IF( X_MIN .GT. MINVAL(AGE(1:NUM_DATA)-delta_age(1:NUM_DATA)) .OR. X_MAX .LT. MAXVAL(AGE(1:NUM_DATA)+delta_age(1:NUM_DATA) ) ) THEN
 PRINT*, 'INCREASE RANGE OF END POINT AGES'
@@ -212,6 +213,7 @@ STOP
 ENDIF
 ENDIF
 
+ENDDO
 
 PRINT*, 'READ IN ', NUM_DATA, 'DATA ITEMS'
 PRINT*, 'DATA AGE RANGE IS ', MINVAL(AGE(1:NUM_DATA)), ' TO ', MAXVAL( AGE(1:NUM_DATA))
