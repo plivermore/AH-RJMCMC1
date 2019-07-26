@@ -532,7 +532,11 @@ DO i_age2 = AGE_INDICES(i_age), MAX_AGE_INDEX
 !ELSE
 !age_prop(i_age2) = MIDPOINT_AGE(i_age2) + RAND(2) * DELTA_AGE(i_age2)
 !ENDIF
+IF (sigma_age > 0) then
 age_prop(i_age2) = AGE(i_age2) + RAND(1) * sigma_age
+ELSE  !interpret as fraction of age error
+age_prop(i_age2) = AGE(i_age2) + RAND(1) * abs(sigma_age) * DELTA_AGE(i_age2)
+ENDIF
 ENDDO
 
 ! To update the AGE_PRIOR_RATIO and check bounds, only use the first within the group

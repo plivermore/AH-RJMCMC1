@@ -310,6 +310,12 @@ ENDIF
 ENDDO
 NUM_AGE_PARAMETERS = J-1
 OPEN(13, FILE = 'AGE_PARAMETERS', FORM = 'FORMATTED', STATUS = 'REPLACE')
+WRITE(13,*) '# List of independent age indices used to make age perturbations'
+WRITE(13,*) '# e.g. 1     1     2     means datum at internal index 1 corresponds with data 1:2-1  i.e. 1:1'
+WRITE(13,*) '# e.g. 4     4     6     means datum at internal index 4 corresponds with data 4:6-1  i.e. data 4 and 5'
+WRITE(13,*) '#  ******************************************************************'
+WRITE(13,*) '# Data index    Start index    Stop index'
+
 DO i = 1,NUM_AGE_PARAMETERS
 WRITE(13,*) I, AGE_INDEX(I), AGE_INDEX(I+1)
 ENDDO
