@@ -165,7 +165,10 @@ sigma\_change: the standard deviation when a vertex is altered in intensity
 
 sigma\_birth: the standard deviation in intensity when a new vertex is born
 
-sigma\_age: the standard deviation in age when proposing an alteration in the sample ages
+sigma\_age: the standard deviation in age when proposing an alteration in the sample ages.
+
+Default: the age perturbation (which is the same for all samples).
+If negative, interpreted as a fraction of the given age uncertainty
 
 ### Age_frac: fraction of ages to change in a proposal 
 (defined as the parameter beta in the manuscript referenced above).
