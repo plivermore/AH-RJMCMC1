@@ -74,6 +74,8 @@ ENDIF
 !default
 input_random_seed = 1
 sd_uncertain_bound = -1
+age_frac = 0
+num_age_changes = 0
 
 DO
 READ(30,'(A)',END=101) inputline
@@ -187,7 +189,7 @@ CALL RANDOM_SEED(SIZE = i)
 ALLOCATE( SEED(1:i) )
 SEED(:) = input_random_seed
 CALL RANDOM_SEED(PUT = SEED)
-PRINT*, 'INITIALISING RANDON NUMBERS USING SEED ', input_random_seed
+PRINT*, 'INITIALISING RANDOM NUMBERS USING SEED ', input_random_seed
 
 IF( X_MIN .eq. X_MAX) THEN
 X_MIN = MINVAL( AGE(1:NUM_DATA) ) - X_MIN
@@ -218,6 +220,12 @@ ENDDO
 PRINT*, 'READ IN ', NUM_DATA, 'DATA ITEMS'
 PRINT*, 'DATA AGE RANGE IS ', MINVAL(AGE(1:NUM_DATA)), ' TO ', MAXVAL( AGE(1:NUM_DATA))
 PRINT*, 'MODEL AGE RANGE IS ', X_MIN, ' : ', X_MAX
+
+IF( sigma_age == 0) then
+PRINT*, 'Resampling ages drawn from prior distribution'
+ELSE
+PRINT*, 'Resampling ages based on a normal perturbation from current age'
+ENDIF
 
 IF( type_col < 0 ) THEN
 data_type(:) = 'O'   ! Set to O(ther): never referenced.
@@ -341,6 +349,16 @@ ENDIF
 PRINT*, 'NUMBER OF AGE HYPERPARAMETERS : ', NUM_AGE_PARAMETERS
 
 CALC_CREDIBLE = .TRUE.
+
+IF( age_frac ==0 .AND. num_age_changes == 0) then ! neither parameter set
+num_age_changes = 1  !set to one by default
+ELSEIF (age_frac > 0) then !age_frac parameter set
+num_age_changes = MAX(1,floor(NUM_AGE_PARAMETERS/age_frac) )
+ELSE  !otherwise, num_age_changes set
+ENDIF
+
+
+PRINT*, 'Number of age changes per iteration is ', num_age_changes
 
 
 !call system('mkdir -p '//TRIM(Outputs_directory))

@@ -33,7 +33,7 @@ REAL( KIND = 8), PARAMETER :: PI = 3.14159265358979_8
 INTEGER :: RUNNING_MODE
 
 CONTAINS
-SUBROUTINE RJMCMC(burn_in, NUM_DATA, MIDPOINT_AGE, DELTA_AGE, INTENSITY, I_SD, STRATIFIED, STRATIFICATION_INDEX, AGE_DISTRIBUTION, AGE_INDICES, NSAMPLE, I_MIN, I_MAX, X_MIN, X_MAX, K_MIN, K_MAX, SIGMA_MOVE, sigma_change_value, sigma_birth, sigma_age, age_frac, discretise_size, SHOW, THIN, NBINS, RETURN_INFO, CALC_CREDIBLE, FREQ_WRITE_MODELS, WRITE_MODEL_FILE_NAME, FREQ_WRITE_JOINT_DISTRIB, credible, Outputs_directory, sd_uncertain_bound, sd_sigma, sd_fraction)
+SUBROUTINE RJMCMC(burn_in, NUM_DATA, MIDPOINT_AGE, DELTA_AGE, INTENSITY, I_SD, STRATIFIED, STRATIFICATION_INDEX, AGE_DISTRIBUTION, AGE_INDICES, NSAMPLE, I_MIN, I_MAX, X_MIN, X_MAX, K_MIN, K_MAX, SIGMA_MOVE, sigma_change_value, sigma_birth, sigma_age, age_frac, discretise_size, SHOW, THIN, NBINS, RETURN_INFO, CALC_CREDIBLE, FREQ_WRITE_MODELS, WRITE_MODEL_FILE_NAME, FREQ_WRITE_JOINT_DISTRIB, credible, Outputs_directory, sd_uncertain_bound, sd_sigma, sd_fraction, num_age_changes)
 
 
 IMPLICIT NONE
@@ -314,10 +314,10 @@ do s=1,nsample
 if (mod(s,show)==0 .AND. s>burn_in) then
 
 if (sd_uncertain_bound < 0) Then
-write(output_unit,'(A,i8,A,i3,5(A,F6.1),A,ES12.2)' ) 'Samples: ',s, ' Vertices: ',k, ' Acceptance: change F ', 100.0*ACV/PCV, &
+write(output_unit,'(A,i9,A,i3,5(A,F6.1),A,ES12.2)' ) 'Samples: ',s, ' Vertices: ',k, ' Acceptance: change F ', 100.0*ACV/PCV, &
 ' change age ', 100.0*AP/PP,  ' birth ', 100.0*AB/PB,' death ',100.0*AD/PD  ,' resample ages ', 100.0*AA/PA, ' likelihood ', like
 else
-write(output_unit,'(A,i8,A,i3,6(A,F6.1),A,ES12.2)' ) 'Samples: ',s, ' Vertices: ',k, ' Acceptance: change F ', 100.0*ACV/PCV, &
+write(output_unit,'(A,i9,A,i3,6(A,F6.1),A,ES12.2)' ) 'Samples: ',s, ' Vertices: ',k, ' Acceptance: change F ', 100.0*ACV/PCV, &
 ' change age ', 100.0*AP/PP,  ' birth ', 100.0*AB/PB,' death ',100.0*AD/PD  ,' resample ages ', 100.0*AA/PA, ' sd rescale ', 100.0*A_sd/P_sd,' likelihood ', like
 endif
 endif
@@ -504,7 +504,6 @@ IF( sd_factor_prop > sd_uncertain_bound ) out = 0
 else
 !select an age at random between 1 and size(AGE_INDICES)
 if (s>burn_in) PA = PA + 1
-num_age_changes = MAX(1,floor(SIZE(AGE_INDICES)/age_frac) )
 
 AGE_FACTOR_FOR_PRIOR = 1.0d0
 
@@ -527,17 +526,23 @@ RAND(1) = randn()              !RAND(2) is a normally distributed random number
 ! This ratio will involve factors from every altered artefact in this move.
 
 DO i_age2 = AGE_INDICES(i_age), MAX_AGE_INDEX
-!IF( AGE_DISTRIBUTION(i_age2) == 'U' .OR. AGE_DISTRIBUTION(i_age2) == 'u') THEN
-!age_prop(i_age2) = MIDPOINT_AGE(i_age2) + 2.0_8 * (RAND(1)-0.5_8) * DELTA_AGE(i_age2)
-!ELSE
-!age_prop(i_age2) = MIDPOINT_AGE(i_age2) + RAND(2) * DELTA_AGE(i_age2)
-!ENDIF
+
 IF (sigma_age > 0) then
 age_prop(i_age2) = AGE(i_age2) + RAND(1) * sigma_age
-ELSE  !interpret as fraction of age error
+ELSEIF( sigma_age < 0) then  !interpret as fraction of age error
 age_prop(i_age2) = AGE(i_age2) + RAND(1) * abs(sigma_age) * DELTA_AGE(i_age2)
+ELSE !sigma_age = 0, sample from prior
+IF( AGE_DISTRIBUTION(i_age2) == 'U' .OR. AGE_DISTRIBUTION(i_age2) == 'u') THEN
+CALL RANDOM_NUMBER( RAND(1))
+age_prop(i_age2) = MIDPOINT_AGE(i_age2) + 2.0_8 * (RAND(1)-0.5_8) * DELTA_AGE(i_age2)
+ELSE
+RAND(1) = randn()
+age_prop(i_age2) = MIDPOINT_AGE(i_age2) + RAND(1) * DELTA_AGE(i_age2)
+ENDIF
+
 ENDIF
 ENDDO
+
 
 ! To update the AGE_PRIOR_RATIO and check bounds, only use the first within the group
 i_age2 = AGE_INDICES(i_age)
@@ -551,6 +556,12 @@ ELSE !normal distirbution
 AGE_FACTOR_FOR_PRIOR = AGE_FACTOR_FOR_PRIOR * exp(-0.5 * (age_prop(i_age2) - MIDPOINT_AGE(i_age2))**2 / DELTA_AGE(i_age)**2) &
 / exp(-0.5 * (age(i_age2) - MIDPOINT_AGE(i_age2))**2 / DELTA_AGE(i_age)**2)
 ENDIF
+
+IF( sigma_age == 0)  AGE_FACTOR_FOR_PRIOR = 1.0_8  !if sample from prior, there is no adjustment for prior ratios
+! If prior sampling, then priors and model perturbations cancel out
+! Otherwise, if normal sampling and uniform age priors, priors cancel and move is symmetric
+! Otherwise, if normal sampling and normal priors, then move is symmetric but priors don't cancel.
+
 
 ! Check to make sure that the ages do not extend past the model ends. For then we can't compute the likelihood.
 IF( age_prop(i_age2) < D_MIN ) out = 0! THEN; PRINT*, 'PROPOSED AGE < DMIN'; STOP; ENDIF

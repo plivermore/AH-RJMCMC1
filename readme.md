@@ -16,6 +16,9 @@ On-the-fly saving of some diagnostics to increase speed.
 **Version 3: Revised July 24th 2019**
 Includes: capability to invert also for a rescaled standard deviation of the intensity by an unknown constant (lambda), by including lambda in the list of hyper-parameters.
 
+**Version 4: revised Jan 17th 2020**
+Includes: an option for drawing from the prior age distributions when resampling the sample ages, and the ability to specify the number of age parameters to be resampled (rather than just a fraction of ages).
+
 Authors: 
 Phil Livermore (University of Leeds)
 Alex Fournier (Institut de Physique du Globe de Paris, Paris)
@@ -23,7 +26,7 @@ Thomas Bodin (Universite Lyon, Lyon)
 
 Maintained by Phil Livermore, Alex Fournier
 
-Last update: July 24th 2019
+Last update: July Jan 17th 2020
 
 ## Overview
 
@@ -135,7 +138,7 @@ See the section below about denoting stratification within the data file.
 
 In all the above, the column index begins at 0.
 
-A typical structure of File_format is:
+A typical structure of File\_format is:
 File_format 0 2 3 4 5 -1 -1 -1  
 
 ### Burn_in: The number of samples for the burn-in period
@@ -167,8 +170,14 @@ sigma\_birth: the standard deviation in intensity when a new vertex is born
 
 sigma\_age: the standard deviation in age when proposing an alteration in the sample ages.
 
-Default: the age perturbation (which is the same for all samples).
-If negative, interpreted as a fraction of the given age uncertainty
+If sigma_age is positive, interpreted as the standard deviation of the normal age perturbation (which is the same for all samples). If negative, the standard deviation of the normal age perturbation is interpreted as the fraction of the given age uncertainty; this differs between samples. If zero, ages are resampled according to prior distributions.
+For example:
+
+`Sigmas 30 2 2 3`: the ages resampled from a normal distribution with mean given by the current age and standard deviation of 3. 
+
+`Sigmas 30 2 2 -0.5`: the ages resampled from a normal distribution with mean given by the current age and standard deviation of 0.5 * sd, where sd is the age uncertainty given in the supplied data file. 
+
+`Sigmas 30 2 2 0`: the ages are resampled from the prior distribution 
 
 ### Age_frac: fraction of ages to change in a proposal 
 (defined as the parameter beta in the manuscript referenced above).
