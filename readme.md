@@ -182,6 +182,9 @@ For example:
 ### Age_frac: fraction of ages to change in a proposal 
 (defined as the parameter beta in the manuscript referenced above).
 
+### Num\_age\_changes: number of ages to change in a proposal 
+Note that only one of age\_frac or num\_age\_changes should be set.
+
 ### Intensity\_prior: 
 min/max bounds on the assumed uniformly distributed intensity prior for vertices: 
 I\_min, I\_max in micro Tesla

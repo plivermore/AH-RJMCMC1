@@ -17,7 +17,7 @@ CHARACTER(len=500) :: inputline, junk, outputs_directory
 INTEGER ::  NARG
 CHARACTER(len=1) :: AGE_distribution(1:MAX_DATA), AGE_DISTRIBUTION_TYPE, STRATIFICATION_INDEX(1:MAX_DATA)
 
-INTEGER :: I, K, BURN_IN, NSAMPLE, K_INIT, K_MAX, K_MIN, K_MAX_ARRAYBOUND, discretise_size, show, thin, num,j, &
+INTEGER :: I, K, BURN_IN, NSAMPLE, K_INIT, K_MAX, K_MIN, K_MAX_ARRAYBOUND, discretise_size, show, thin, num,j, num_age_changes, &
 NUM_DATA, IOS, K_MAX_ARRAY_BOUND, s, ind, NBINS, I_MODEL, FREQ_WRITE_MODELS, FREQ_WRITE_JOINT_DISTRIB, SAMPLE_INDEX_JOINT_DISTRIBUTION
 INTEGER :: input_random_seed
 
@@ -93,6 +93,7 @@ IF ( to_upper(inputline(1:len('running_mode'))) == to_upper('running_mode') ) re
 IF ( to_upper(inputline(1:len('Age_bounds'))) == to_upper('Age_bounds') ) read(inputline(len('Age_bounds')+2:),*) X_min, X_max
 IF ( to_upper(inputline(1:len('Sigmas'))) == to_upper('Sigmas') ) read(inputline(len('Sigmas')+2:),*) sigma_move, sigma_change_value, sigma_birth, sigma_age
 IF ( to_upper(inputline(1:len('Age_frac'))) == to_upper('Age_frac') ) read(inputline(len('Age_frac')+2:),*) age_frac
+IF ( to_upper(inputline(1:len('Num_age_changes'))) == to_upper('Num_age_changes') ) read(inputline(len('num_age_changes')+2:),*) num_age_changes
 IF ( to_upper(inputline(1:len('Num_change_points'))) == to_upper('Num_change_points') ) read(inputline(len('Num_change_points')+2:),*) K_MIN, K_MAX
 IF ( to_upper(inputline(1:len('Nbins'))) == to_upper('Nbins') ) read(inputline(len('Nbins')+2:),*) NBINS
 IF ( to_upper(inputline(1:len('output_model'))) == to_upper('output_model') ) read(inputline(len('output_model')+2:),*) WRITE_MODEL_FILE_NAME, FREQ_WRITE_MODELS
@@ -101,7 +102,7 @@ IF ( to_upper(inputline(1:len('Credible'))) == to_upper('Credible') ) read(input
 IF ( to_upper(inputline(1:len('Outputs_directory'))) == to_upper('Outputs_directory') ) read(inputline(len('Outputs_directory')+2:),'(A)') outputs_directory
 IF ( to_upper(inputline(1:len('SEED'))) == to_upper('SEED') ) read(inputline(len('SEED')+2:),*) input_random_seed
 IF ( to_upper(inputline(1:len('Sigma_uncertain'))) == to_upper('Sigma_uncertain') ) read(inputline(len('Sigma_uncertain')+2:),*) sd_uncertain_bound, sd_sigma, sd_fraction
-
+num_age_changes
 
 ENDDO
 101     CONTINUE
