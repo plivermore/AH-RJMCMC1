@@ -102,7 +102,7 @@ IF ( to_upper(inputline(1:len('Credible'))) == to_upper('Credible') ) read(input
 IF ( to_upper(inputline(1:len('Outputs_directory'))) == to_upper('Outputs_directory') ) read(inputline(len('Outputs_directory')+2:),'(A)') outputs_directory
 IF ( to_upper(inputline(1:len('SEED'))) == to_upper('SEED') ) read(inputline(len('SEED')+2:),*) input_random_seed
 IF ( to_upper(inputline(1:len('Sigma_uncertain'))) == to_upper('Sigma_uncertain') ) read(inputline(len('Sigma_uncertain')+2:),*) sd_uncertain_bound, sd_sigma, sd_fraction
-num_age_changes
+
 
 ENDDO
 101     CONTINUE
