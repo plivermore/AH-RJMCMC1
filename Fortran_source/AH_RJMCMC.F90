@@ -359,7 +359,7 @@ ELSE  !otherwise, num_age_changes set
 ENDIF
 
 
-PRINT*, 'Number of age changes per iteration is ', num_age_changes
+PRINT*, 'Number of age changes per resample-age perturbation is ', num_age_changes
 
 
 !call system('mkdir -p '//TRIM(Outputs_directory))
