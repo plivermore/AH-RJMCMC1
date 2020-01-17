@@ -182,7 +182,7 @@ For example:
 ### Age_frac: fraction of ages to change in a proposal 
 (defined as the parameter beta in the manuscript referenced above).
 
-### Num\_age\_changes: number of ages to change in a proposal 
+### Num\_age\_changes: number of ages to change in a resample-age proposal 
 Note that only one of age\_frac or num\_age\_changes should be set.
 
 ### Intensity\_prior: 
