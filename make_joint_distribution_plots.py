@@ -28,7 +28,7 @@ for line in open('input_file'):
         if line.split()[0].upper() == 'Data_file'.upper():
             Data_filename = line.split()[1].rstrip();
         if line.split()[0].upper() == 'File_format'.upper():
-            id, age_col, d_age_col, F_col, dF_col, Strat_col = int(line.split()[1]),int(line.split()[2]),int(line.split()[3]),int(line.split()[4]), int(line.split()[5]), int(line.split()[6])
+            id, age_col, d_age_col, F_col, dF_col, Type_col, age_dist_col, Strat_col = int(line.split()[1]),int(line.split()[2]),int(line.split()[3]),int(line.split()[4]), int(line.split()[5]), int(line.split()[6]), int(line.split()[7]), int(line.split()[8])
         if line.split()[0].upper() == 'Intensity_prior'.upper():
             I_min,I_max =  float(line.split()[1]),float(line.split()[2])
         if line.split()[0].upper() == 'True_data'.upper():
@@ -48,6 +48,7 @@ print("Making joint plot for sample " + str(index))
 
 # load the (noisy) data file
 data = np.loadtxt(filename,usecols=(age_col, d_age_col, F_col, dF_col), unpack=False, comments='#')
+data_type = np.loadtxt(filename,usecols=(age_dist_col), unpack=False, comments='#', dtype = np.str)
 noisy_pt = [data[index-1,0], data[index-1,2]]
 errs = [data[index-1,1], data[index-1,3]]
 print(data[index-1,:])
@@ -67,8 +68,7 @@ sns.set_style("ticks")
 
 
 g = sns.JointGrid(x='age',y='intensity',data=joint_data)
-g.ax_marg_x.hist(dist[:,0], bins=np.linspace(noisy_pt[0]-errs[0],noisy_pt[0]+errs[0],num_bins),alpha=0.5,color='g')
-(n, bins, patches) = g.ax_marg_y.hist(dist[:,1], alpha=.5, orientation="horizontal", bins=num_bins,color='g',normed=True)
+(n, bins, patches) = g.ax_marg_y.hist(dist[:,1], alpha=.5, orientation="horizontal", bins=num_bins,color='g',density=True)
 g.plot_joint(plt.hexbin, gridsize=num_bins,  cmap="Greens", mincnt = 1)
 
 if 'true_behaviour_file' in locals(): g.ax_joint.plot(true_pt[0],true_pt[1],'^',color='red',markersize=10,label='True value')
@@ -76,10 +76,23 @@ if 'true_behaviour_file' in locals(): g.ax_joint.plot(true_pt[0],true_pt[1],'^',
 (line, caps, bars) = g.ax_joint.errorbar(noisy_pt[0],noisy_pt[1],xerr=errs[0],yerr=errs[1],color='blueviolet',fmt='s',label='Noisy observation',capsize=5,elinewidth=2,capthick=0.7)
 
 #plot histogram of age prior:
-g.ax_marg_x.bar(noisy_pt[0]-errs[0],height=np.shape(dist)[0]/num_bins,width=2.*errs[0],alpha=0.5,color='darkorange',align='edge')
+if data_type[index-1].upper() == 'N':  #normal distribution
+    g.ax_marg_x.hist(dist[:,0], bins=np.linspace(noisy_pt[0]-2*errs[0],noisy_pt[0]+2*errs[0],num_bins),alpha=0.5,color='g', density=True)
+    print('Datum has a normally distributed age prior')
+    sigma = data[index-1,1]
+    mu = noisy_pt[0]
+    q = np.linspace(mu - 4 * sigma, mu + 4 * sigma,1000)
+    curve = 1/(sigma * np.sqrt(2 * np.pi)) * np.exp( - (q - mu)**2 / (2 * sigma**2))
+    g.ax_marg_x.fill_between(q,curve,0,alpha=0.5,color='darkorange')   #plot normalised curve
+    x_plot_range = 2*errs[0]+5
+else:  #uniform distribution
+    print('Datum has a uniformally distributed age prior')
+    g.ax_marg_x.hist(dist[:,0], bins=np.linspace(noisy_pt[0]-errs[0],noisy_pt[0]+errs[0],num_bins),alpha=0.5,color='g')
+    g.ax_marg_x.bar(noisy_pt[0]-errs[0],height=np.shape(dist)[0]/num_bins,width=2.*errs[0],alpha=0.5,color='darkorange',align='edge')
+    x_plot_range = errs[0]+5
 
 y_plot_range = 3 * errs[1] #max(errs[1]+1,7)
-x_plot_range = errs[0]+5
+
 
 g.ax_joint.set_ylim([min(dist[:,1].min(),noisy_pt[1]-y_plot_range),max(dist[:,1].max(),noisy_pt[1]+y_plot_range)])
 g.ax_joint.set_xlim([noisy_pt[0]-x_plot_range,noisy_pt[0]+x_plot_range])
