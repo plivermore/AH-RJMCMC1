@@ -120,7 +120,7 @@ ENDIF
 
 ALLOCATE( LINE_READ(1: max(id_col, age_col, d_age_col, F_col, dF_col, distribution_col, type_col, strat_col)+1) )
 
-write(OUTPUT_unit, fmt="(a,2x,i4)") "strat_col = ", strat_col
+!write(OUTPUT_unit, fmt="(a,2x,i4)") "strat_col = ", strat_col
 
 I=1
 DO
@@ -366,7 +366,7 @@ PRINT*, 'Number of age changes per iteration is ', num_age_changes
 
 ! copy input file
 call system('cp '//TRIM(ARG)//' '//TRIM(Outputs_directory)//'/input_file')
-CALL RJMCMC(burn_in, NUM_DATA, age(1:NUM_DATA), delta_age(1:NUM_DATA), intensity(1:NUM_DATA), delta_intensity(1:NUM_DATA), stratification(1: NUM_DATA), STRATIFICATION_INDEX(1:NUM_DATA), AGE_DISTRIBUTION(1:NUM_DATA), AGE_INDEX(1:NUM_AGE_PARAMETERS), NSAMPLE, I_MIN, I_MAX, X_MIN, X_MAX, K_MIN, K_MAX, SIGMA_MOVE, sigma_change_value, sigma_birth, sigma_age, age_frac, discretise_size, SHOW, THIN, NBINS, RETURN_INFO, CALC_CREDIBLE, FREQ_WRITE_MODELS, WRITE_MODEL_FILE_NAME, FREQ_WRITE_JOINT_DISTRIB,   credible, Outputs_directory, sd_uncertain_bound, sd_sigma, sd_fraction)
+CALL RJMCMC(burn_in, NUM_DATA, age(1:NUM_DATA), delta_age(1:NUM_DATA), intensity(1:NUM_DATA), delta_intensity(1:NUM_DATA), stratification(1: NUM_DATA), STRATIFICATION_INDEX(1:NUM_DATA), AGE_DISTRIBUTION(1:NUM_DATA), AGE_INDEX(1:NUM_AGE_PARAMETERS), NSAMPLE, I_MIN, I_MAX, X_MIN, X_MAX, K_MIN, K_MAX, SIGMA_MOVE, sigma_change_value, sigma_birth, sigma_age, age_frac, discretise_size, SHOW, THIN, NBINS, RETURN_INFO, CALC_CREDIBLE, FREQ_WRITE_MODELS, WRITE_MODEL_FILE_NAME, FREQ_WRITE_JOINT_DISTRIB,   credible, Outputs_directory, sd_uncertain_bound, sd_sigma, sd_fraction, num_age_changes)
 
 
 
