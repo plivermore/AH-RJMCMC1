@@ -270,8 +270,8 @@ STRATIFICATION_INDEX(:) = ' '
 DO i = 1, NUM_DATA
 IF( stratification_read_line(i)(1:1) .NE. '0') THEN
 J = LEN(TRIM(stratification_read_line(i)))
-READ( stratification_read_line(i)(1:j-1), fmt="(i1)") STRATIFICATION(i)
-READ( stratification_read_line(i)(j:j),'(A)') STRATIFICATION_INDEX(i)
+READ( stratification_read_line(i)(1:j-1), *) STRATIFICATION(i)  !read an integer of unknown length
+READ( stratification_read_line(i)(j:j),'(A)') STRATIFICATION_INDEX(i)  !read a single character
 ENDIF
 ENDDO
 ELSE  !either no stratification, or only a single dataset is specified without the 'a' notation. In either case, set all elements of stratification_index to 'a'
