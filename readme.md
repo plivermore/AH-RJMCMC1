@@ -19,6 +19,9 @@ Includes: capability to invert also for a rescaled standard deviation of the int
 **Version 4: revised Jan 17th 2020**
 Includes: an option for drawing from the prior age distributions when resampling the sample ages, and the ability to specify the number of age parameters to be resampled (rather than just a fraction of ages).
 
+**Version 5: revised March 4th 2020**
+New option for time-dependent prior on the intensity values of the internal vertices.
+
 Authors: 
 Phil Livermore (University of Leeds)
 Alex Fournier (Institut de Physique du Globe de Paris, Paris)
@@ -26,7 +29,7 @@ Thomas Bodin (Universite Lyon, Lyon)
 
 Maintained by Phil Livermore, Alex Fournier
 
-Last update: July Jan 17th 2020
+Last update: March 2020
 
 ## Overview
 
