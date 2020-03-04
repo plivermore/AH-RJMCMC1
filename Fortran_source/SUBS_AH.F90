@@ -46,7 +46,7 @@ NBINS, BIN_INDEX, IS_DIFF, CHANGE_AGE, CHANGE_value, i_age, FREQ_WRITE_MODELS, I
 FREQ_WRITE_JOINT_DISTRIB, SAMPLE_INDEX_JOINT_DISTRIBUTION, change_sd_factor
 REAL( KIND = 8) :: D_MIN, D_MAX, I_MAX, I_MIN, sigma_move, sigma_change_value, &
 sigma_birth, sigma_age, like_prop, prob, INT_J, pt_death(2), &
-X_MIN, X_MAX, U, RAND(2), alpha, TEMP_RAND, AGE_FACTOR_FOR_PRIOR
+X_MIN, X_MAX, U, RAND(2), alpha, TEMP_RAND, AGE_FACTOR_FOR_PRIOR, I_MAX_GLOBAL, I_MIN_GLOBAL
 CHARACTER(300) :: WRITE_MODEL_FILE_NAME, format_descriptor, FILENAME
 CHARACTER(1) :: AGE_DISTRIBUTION(:)
 CHARACTER :: STRATIFICATION_INDEX(1:NUM_DATA)
@@ -58,7 +58,7 @@ INTEGER :: AGE_INDICES(:), MAX_AGE_INDEX, i_age2
 INTEGER :: b, bb, AB, AD, PD, PB, ACV, PCV, AP, PP, PA, AA, num_age_changes, P_sd, A_sd,&
 STRATIFIED(:), STRATIFICATION_AGE_DIRECTION
 REAL( KIND = 8) :: MIDPOINT_AGE(:), DELTA_AGE(:), Intensity(:), I_sd(:), ENDPT(2), ENDPT_PROP(2), like, like_best, like_init
-REAL( KIND = 8), ALLOCATABLE :: VAL_MIN(:), VAL_MAX(:),   MINI(:,:), MAXI(:,:), PT(:,:), PT_PROP(:,:)
+REAL( KIND = 8), ALLOCATABLE :: VAL_MIN(:), VAL_MAX(:),   MINI(:,:), MAXI(:,:), PT(:,:), PT_PROP(:,:), I_min_overall_vector(:), I_max_overall_vector(:)
 REAL( KIND = 8), ALLOCATABLE :: interpolated_signal(:), X(:), PTS_NEW(:,:), PT_BEST(:,:), age(:), age_prop(:), interpolated_signal_grad(:), X2(:)
 INTEGER, ALLOCATABLE, DIMENSION(:) :: IND_MIN, IND_MAX
 INTEGER, ALLOCATABLE :: discrete_history(:,:)
@@ -100,6 +100,13 @@ ALLOCATE( age(1: num_data), age_prop(1:num_data), discrete_history(1:discretise_
 
 ALLOCATE( pt(1:k_max_array_bound,2), pt_prop(1:k_max_array_bound,2) , pt_best(1:k_max_array_bound,2) )
 
+! Find overall min/max for intensity prior in order to produce outputs
+ALLOCATE( I_max_overall_vector(1:discretise_size), I_min_overall_vector(1:discretise_size) )
+DO I = 1,discretise_size
+CALL Find_prior_bounds(X(I), I_min_overall_vector(i), I_max_overall_vector(i))
+ENDDO
+I_MIN_GLOBAL = MINVAL( I_min_overall_vector )
+I_MAX_GLOBAL = MAXVAL( I_max_overall_vector )
 
 ! Use initial ages to determine direction of stratification. If data are not stratified, this is never accessed.
 STRATIFICATION_AGE_DIRECTION = 0
@@ -760,11 +767,11 @@ enddo
 
 ! build marginal intensity density
 DO i=1,discretise_size
-BIN_INDEX = FLOOR( (interpolated_signal(i)-I_MIN)/REAL(I_MAX-I_MIN, KIND = 8) * NBINS ) + 1
+BIN_INDEX = FLOOR( (interpolated_signal(i)-I_MIN_GLOBAL)/REAL(I_MAX_GLOBAL-I_MIN_GLOBAL, KIND = 8) * NBINS ) + 1
 IF( BIN_INDEX < 0 .OR. BIN_INDEX > NBINS) THEN
 PRINT*, 'FATAL ERROR, BIN_INDEX IS OUT OF RANGE'
 PRINT*, ' MODEL POINT ', I, ' VALUE ',interpolated_signal(i)
-PRINT*, 'INTENSITY MIN/MAX ', I_MIN, I_MAX
+PRINT*, 'GLOBAL INTENSITY MIN/MAX ', I_MIN_GLOBAL, I_MAX_GLOBAL
 STOP
 ENDIF
 discrete_history(i,BIN_INDEX) = discrete_history(i,BIN_INDEX) + 1
@@ -873,12 +880,12 @@ RETURN_INFO%sup_dFdt(i) = MINVAL(MAXI_dFdt(i,:) )
 RETURN_INFO%inf_dFdt(i) = MAXVAL(MINI_dFdt(i,:) )
 
 ! Compute the mode
-RETURN_INFO%MODE(i) = (0.5_8 + REAL(MAXLOC( discrete_history(i,:),DIM = 1)-1, KIND = 8))/NBINS * (I_MAX-I_MIN) + I_MIN
+RETURN_INFO%MODE(i) = (0.5_8 + REAL(MAXLOC( discrete_history(i,:),DIM = 1)-1, KIND = 8))/NBINS * (I_MAX_GLOBAL-I_MIN_GLOBAL) + I_MIN_GLOBAL
 
 ! Compute the median. Get the first instance of the count from the left being greater than half the total:
 do j=1, NBINS
 if( sum( discrete_history(i,1:j)) .GE. sum( discrete_history(i,1:NBINS))/2) then
-RETURN_INFO%median(i) = (REAL(j-1, KIND = 8)+0.5_8)/NBINS * (I_MAX-I_MIN) + I_MIN
+RETURN_INFO%median(i) = (REAL(j-1, KIND = 8)+0.5_8)/NBINS * (I_MAX_GLOBAL-I_MIN_GLOBAL) + I_MIN_GLOBAL
 exit
 endif
 enddo
