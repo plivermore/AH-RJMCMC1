@@ -28,6 +28,7 @@ integer :: output_changepoints_unit
 END TYPE RETURN_INFO_STRUCTURE
 
 INTEGER, PARAMETER :: AGE_ASCENDING = 1, AGE_DESCENDING = 2
+REAL( KIND = 8), ALLOCATABLE :: PRIOR_INTENSITY_TIME_DEPENDENCE(:,:)
 
 REAL( KIND = 8), PARAMETER :: PI = 3.14159265358979_8
 INTEGER :: RUNNING_MODE
@@ -51,7 +52,7 @@ CHARACTER(1) :: AGE_DISTRIBUTION(:)
 CHARACTER :: STRATIFICATION_INDEX(1:NUM_DATA)
 INTEGER, ALLOCATABLE :: ORDER(:)
 REAL( KIND = 8) :: ENDPT_BEST(2), age_frac, credible, age1, age2, sd_uncertain_bound, sd_sigma, sd_fraction, PRIOR_INTENSITY_TIME_DEPENDENCE(:,:)
-REAL( KIND = 8) :: sd_factor, sd_factor_prop
+REAL( KIND = 8) :: sd_factor, sd_factor_prop, age_query
 INTEGER :: AGE_INDICES(:), MAX_AGE_INDEX, i_age2
 
 INTEGER :: b, bb, AB, AD, PD, PB, ACV, PCV, AP, PP, PA, AA, num_age_changes, P_sd, A_sd,&
@@ -255,20 +256,18 @@ CALL RANDOM_NUMBER( RAND(1:2))
 !PRINT*, RAND(1:2), D_MIN, D_MAX, I_MIN, I_MAX
 pt(i,1)=D_min+rand(1) * (D_max-D_min)  ! time-position of internal vertex
 
-call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,2), 1, pt(i,1), interpolated_signal(1) ); I_min = interpolated_signal(1)
-call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,3), 1, pt(i,1), interpolated_signal(1) ); I_max = interpolated_signal(1)
+CALL Find_prior_bounds(pt(i,1), I_min, I_max)
+
 !PRINT*, I_min, I_max,SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1)
 pt(i,2)=I_min+rand(2) * (I_max-I_min)  ! magnitude of vertices
 enddo
 
 CALL RANDOM_NUMBER (RAND(1:2))
 ! Now assign initial value using time-dependent prior to end points:
-call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,2), 1, D_min, interpolated_signal(1) ); I_min = interpolated_signal(1)
-call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,3), 1, D_min, interpolated_signal(1) ); I_max = interpolated_signal(1)
+CALL Find_prior_bounds(D_min, I_min, I_max)
 endpt(1) = I_min+RAND(1) * (I_max-I_min)
 
-call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,2), 1, D_max, interpolated_signal(1) ); I_min = interpolated_signal(1)
-call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,3), 1, D_max, interpolated_signal(1) ); I_max = interpolated_signal(1)
+CALL Find_prior_bounds(D_max, I_min, I_max)
 endpt(2) = I_min+RAND(2) * (I_max-I_min)
 
 ! make sure the positions are sorted in ascending order.
@@ -326,13 +325,13 @@ do s=1,nsample
 
 if (mod(s,show)==0 .AND. s>burn_in) then
 
-if (sd_uncertain_bound < 0) Then
-write(output_unit,'(A,i9,A,i3,5(A,F6.1),A,ES12.2)' ) 'Samples: ',s, ' Vertices: ',k, ' Acceptance: change F ', 100.0*ACV/PCV, &
-' change age ', 100.0*AP/PP,  ' birth ', 100.0*AB/PB,' death ',100.0*AD/PD  ,' resample ages ', 100.0*AA/PA, ' likelihood ', like
-else
-write(output_unit,'(A,i9,A,i3,6(A,F6.1),A,ES12.2)' ) 'Samples: ',s, ' Vertices: ',k, ' Acceptance: change F ', 100.0*ACV/PCV, &
-' change age ', 100.0*AP/PP,  ' birth ', 100.0*AB/PB,' death ',100.0*AD/PD  ,' resample ages ', 100.0*AA/PA, ' sd rescale ', 100.0*A_sd/P_sd,' likelihood ', like
-endif
+    if (sd_uncertain_bound < 0) Then
+        write(output_unit,'(A,i9,A,i3,5(A,F6.1),A,ES12.2)' ) 'Samples: ',s, ' Vertices: ',k, ' Acceptance: change F ', 100.0*ACV/PCV, &
+        ' change age ', 100.0*AP/PP,  ' birth ', 100.0*AB/PB,' death ',100.0*AD/PD  ,' resample ages ', 100.0*AA/PA, ' likelihood ', like
+    else
+        write(output_unit,'(A,i9,A,i3,6(A,F6.1),A,ES12.2)' ) 'Samples: ',s, ' Vertices: ',k, ' Acceptance: change F ', 100.0*ACV/PCV, &
+        ' change age ', 100.0*AP/PP,  ' birth ', 100.0*AB/PB,' death ',100.0*AD/PD  ,' resample ages ', 100.0*AA/PA, ' sd rescale ', 100.0*A_sd/P_sd,' likelihood ', like
+    endif
 endif
 
 
@@ -367,15 +366,15 @@ ind=ceiling(RAND(1)*(k+2))
 
 ! Find prior bounds
 IF(ind == k+1)  then ! left end point
-age_query = D_min
+CALL Find_prior_bounds(D_min, I_min, I_max)
 ELSEIF (ind == k+2) then !right end point
-age_query = D_max
+CALL Find_prior_bounds(D_max, I_min, I_max)
 ELSE !internal point
-age_query = pt(ind,1)
+CALL Find_prior_bounds(pt(ind,1), I_min, I_max)
+
 ENDIF
 
-call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,2), 1, age_query, interpolated_signal(1) ); I_min = interpolated_signal(1)
-call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,3), 1, age_query, interpolated_signal(1) ); I_max = interpolated_signal(1)
+
 
 ! Alter value and check bounds to see if outside prior
 if(ind == k+1)  then! change left end point
@@ -425,10 +424,7 @@ exp(-(interpolated_signal(1)-pt_prop(k+1,2))**2/(2.0_8*sigma_birth**2))
 !Check BOUNDS to see if outside prior
 
 ! Find prior bounds
-call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,2), 1, pt_prop(k+1,1), interpolated_signal(1) ); I_min = interpolated_signal(1)
-call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,3), 1, pt_prop(k+1,1), interpolated_signal(1) ); I_max = interpolated_signal(1)
-
-
+CALL Find_prior_bounds(pt_prop(k+1,1), I_min, I_max)
 
 out = 1
 if ((pt_prop(k+1,2)>I_max) .OR. (pt_prop(k+1,2)<I_min))  out = 0
@@ -473,6 +469,9 @@ CALL Find_linear_interpolated_values(k_prop, x_min, x_max, pt_prop, endpt_prop, 
 prob = 1.0_8/(sigma_birth*sqrt(2.0_8*pi))  * &
 exp(-(interpolated_signal(1)-pt_death(2))**2/(2.0_8*sigma_birth**2))
 
+! Find prior bounds on intensity - needed in acceptance ratio
+CALL Find_prior_bounds(pt_death(1), I_min, I_max)
+
 endif !if (out==1)
 
 else ! MOVE +++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -493,13 +492,17 @@ out = 1
 if ( (pt_prop(ind,1) > D_max) .OR. (pt_prop(ind,1) < D_min) )  out = 0
 
 ! Find prior bounds on intensity
-call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,2), 1, pt_prop(ind,1), interpolated_signal(1) ); I_min = interpolated_signal(1)
-call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,3), 1, pt_prop(ind,1), interpolated_signal(1) ); I_max = interpolated_signal(1)
+CALL Find_prior_bounds(pt_prop(ind,1), I_min, I_max)
 
 ! check
 if ((pt_prop(ind,2)>I_max) .OR. (pt_prop(ind,2)<I_min))  out = 0
 
+! Calculate the ratio of the priors for the moved vertex (these will not cancel out in general)
+! AGE_FACTOR_FOR_PRIOR = prior of intensity for proposed age / prior of intensity for existing age
+AGE_FACTOR_FOR_PRIOR = 1.0_8/(I_max - I_min)
 
+CALL Find_prior_bounds(pt(ind,1), I_min, I_max)
+AGE_FACTOR_FOR_PRIOR = AGE_FACTOR_FOR_PRIOR * (I_max - I_min)
 
 
 !! check that all the time-points are different:
@@ -551,66 +554,66 @@ if (s>burn_in) PA = PA + 1
 AGE_FACTOR_FOR_PRIOR = 1.0d0
 
 do j = 1, num_age_changes
-CALL RANDOM_NUMBER( RAND(1))
-i_age = floor( SIZE(AGE_INDICES) * rand(1)) + 1
+    CALL RANDOM_NUMBER( RAND(1))
+    i_age = floor( SIZE(AGE_INDICES) * rand(1)) + 1
 
-! Find the data associated with an age parameter.
-! If i_age is not the last index, then choose one below the next index; otherwise use NUM_DATA
-MAX_AGE_INDEX = NUM_DATA
-IF (i_age < SIZE(AGE_INDICES) ) MAX_AGE_INDEX = AGE_INDICES(i_age+1)-1
+    ! Find the data associated with an age parameter.
+    ! If i_age is not the last index, then choose one below the next index; otherwise use NUM_DATA
+    MAX_AGE_INDEX = NUM_DATA
+    IF (i_age < SIZE(AGE_INDICES) ) MAX_AGE_INDEX = AGE_INDICES(i_age+1)-1
 
-!CALL RANDOM_NUMBER( RAND(1))   !RAND(1) is a uniformly distributed random number
-RAND(1) = randn()              !RAND(2) is a normally distributed random number
+    !CALL RANDOM_NUMBER( RAND(1))   !RAND(1) is a uniformly distributed random number
+    RAND(1) = randn()              !RAND(2) is a normally distributed random number
 
-!We use the same age perturbation for each grouping so artefacts are moved together.
-! The prior ratio depends the age parameters (one per group of artefacts)
-! If they are uniformly distributed, the prior ratio is 1.
-! Otherwise, it depends on the normal distribution
-! This ratio will involve factors from every altered artefact in this move.
+    !We use the same age perturbation for each grouping so artefacts are moved together.
+    ! The prior ratio depends the age parameters (one per group of artefacts)
+    ! If they are uniformly distributed, the prior ratio is 1.
+    ! Otherwise, it depends on the normal distribution
+    ! This ratio will involve factors from every altered artefact in this move.
 
-DO i_age2 = AGE_INDICES(i_age), MAX_AGE_INDEX
+    DO i_age2 = AGE_INDICES(i_age), MAX_AGE_INDEX
 
-IF (sigma_age > 0) then
-age_prop(i_age2) = AGE(i_age2) + RAND(1) * sigma_age
-ELSEIF( sigma_age < 0) then  !interpret as fraction of age error
-age_prop(i_age2) = AGE(i_age2) + RAND(1) * abs(sigma_age) * DELTA_AGE(i_age2)
-ELSE !sigma_age = 0, sample from prior
-IF( AGE_DISTRIBUTION(i_age2) == 'U' .OR. AGE_DISTRIBUTION(i_age2) == 'u') THEN
-CALL RANDOM_NUMBER( RAND(1))
-age_prop(i_age2) = MIDPOINT_AGE(i_age2) + 2.0_8 * (RAND(1)-0.5_8) * DELTA_AGE(i_age2)
-ELSE
-RAND(1) = randn()
-age_prop(i_age2) = MIDPOINT_AGE(i_age2) + RAND(1) * DELTA_AGE(i_age2)
-ENDIF
+        IF (sigma_age > 0) then
+        age_prop(i_age2) = AGE(i_age2) + RAND(1) * sigma_age
+        ELSEIF( sigma_age < 0) then  !interpret as fraction of age error
+        age_prop(i_age2) = AGE(i_age2) + RAND(1) * abs(sigma_age) * DELTA_AGE(i_age2)
+        ELSE !sigma_age = 0, sample from prior
+        IF( AGE_DISTRIBUTION(i_age2) == 'U' .OR. AGE_DISTRIBUTION(i_age2) == 'u') THEN
+        CALL RANDOM_NUMBER( RAND(1))
+        age_prop(i_age2) = MIDPOINT_AGE(i_age2) + 2.0_8 * (RAND(1)-0.5_8) * DELTA_AGE(i_age2)
+        ELSE
+        RAND(1) = randn()
+        age_prop(i_age2) = MIDPOINT_AGE(i_age2) + RAND(1) * DELTA_AGE(i_age2)
+        ENDIF
 
-ENDIF
-ENDDO
-
-
-! To update the AGE_PRIOR_RATIO and check bounds, only use the first within the group
-i_age2 = AGE_INDICES(i_age)
-
-IF( AGE_DISTRIBUTION(i_age2) == 'U' .OR. AGE_DISTRIBUTION(i_age2) == 'u') THEN
-!  AGE_FACTOR_FOR_PRIOR doesn't change.
-
-! Discard age proposal if it lies outside of the uniform bounds:
-IF( age_prop(i_age2) > MIDPOINT_AGE(i_age2) + DELTA_AGE(i_age2) .OR. age_prop(i_age2) < MIDPOINT_AGE(i_age2) - DELTA_AGE(i_age2)) out = 0
-ELSE !normal distirbution
-AGE_FACTOR_FOR_PRIOR = AGE_FACTOR_FOR_PRIOR * exp(-0.5 * (age_prop(i_age2) - MIDPOINT_AGE(i_age2))**2 / DELTA_AGE(i_age)**2) &
-/ exp(-0.5 * (age(i_age2) - MIDPOINT_AGE(i_age2))**2 / DELTA_AGE(i_age)**2)
-ENDIF
-
-IF( sigma_age == 0)  AGE_FACTOR_FOR_PRIOR = 1.0_8  !if sample from prior, there is no adjustment for prior ratios
-! If prior sampling, then priors and model perturbations cancel out
-! Otherwise, if normal sampling and uniform age priors, priors cancel and move is symmetric
-! Otherwise, if normal sampling and normal priors, then move is symmetric but priors don't cancel.
+        ENDIF
+    ENDDO
 
 
-! Check to make sure that the ages do not extend past the model ends. For then we can't compute the likelihood.
-IF( age_prop(i_age2) < D_MIN ) out = 0! THEN; PRINT*, 'PROPOSED AGE < DMIN'; STOP; ENDIF
-IF( age_prop(i_age2) > D_MAX ) out = 0! THEN; PRINT*, 'PROPOSED AGE > DMAX'; PRINT*, 'AGE INDEX = ', i_age2, ' PROPOSED AGE = ', age_prop(i_age2); PRINT*,' MIDPOINT AGE IS ', MIDPOINT_AGE(i_age2), ' RANDOM PERTURB SCALING ', RAND(1); STOP; ENDIF
-!alter age model.
-change_age = 1  !the acceptance probability is the same for MOVE
+    ! To update the AGE_PRIOR_RATIO and check bounds, only use the first within the group
+    i_age2 = AGE_INDICES(i_age)
+
+    IF( AGE_DISTRIBUTION(i_age2) == 'U' .OR. AGE_DISTRIBUTION(i_age2) == 'u') THEN
+    !  AGE_FACTOR_FOR_PRIOR doesn't change.
+
+    ! Discard age proposal if it lies outside of the uniform bounds:
+    IF( age_prop(i_age2) > MIDPOINT_AGE(i_age2) + DELTA_AGE(i_age2) .OR. age_prop(i_age2) < MIDPOINT_AGE(i_age2) - DELTA_AGE(i_age2)) out = 0
+    ELSE !normal distirbution
+    AGE_FACTOR_FOR_PRIOR = AGE_FACTOR_FOR_PRIOR * exp(-0.5 * (age_prop(i_age2) - MIDPOINT_AGE(i_age2))**2 / DELTA_AGE(i_age)**2) &
+    / exp(-0.5 * (age(i_age2) - MIDPOINT_AGE(i_age2))**2 / DELTA_AGE(i_age)**2)
+    ENDIF
+
+    IF( sigma_age == 0)  AGE_FACTOR_FOR_PRIOR = 1.0_8  !if sample from prior, there is no adjustment for prior ratios
+    ! If prior sampling, then priors and model perturbations cancel out
+    ! Otherwise, if normal sampling and uniform age priors, priors cancel and move is symmetric
+    ! Otherwise, if normal sampling and normal priors, then move is symmetric but priors don't cancel.
+
+
+    ! Check to make sure that the ages do not extend past the model ends. For then we can't compute the likelihood.
+    IF( age_prop(i_age2) < D_MIN ) out = 0! THEN; PRINT*, 'PROPOSED AGE < DMIN'; STOP; ENDIF
+    IF( age_prop(i_age2) > D_MAX ) out = 0! THEN; PRINT*, 'PROPOSED AGE > DMAX'; PRINT*, 'AGE INDEX = ', i_age2, ' PROPOSED AGE = ', age_prop(i_age2); PRINT*,' MIDPOINT AGE IS ', MIDPOINT_AGE(i_age2), ' RANDOM PERTURB SCALING ', RAND(1); STOP; ENDIF
+    !alter age model.
+    change_age = 1  !the acceptance probability is the same for MOVE
 ENDDO
 
 IF( .NOT. CHECK_STRATIFICATION(AGE_PROP, STRATIFIED, STRATIFICATION_INDEX, STRATIFICATION_AGE_DIRECTION,  NUM_DATA) ) out = 0
@@ -649,14 +652,14 @@ alpha = 0
 ! The acceptance term takes different
 ! values according the the proposal that has been made.
 
-if (birth == 1) then
+if (birth == 1) then  !note that I_max and I_min are defined in the "perturbation" section of the code.
 if(out ==1) alpha = ((1.0_8/((I_max-I_min)*prob))*exp(-like_prop+like))
 CALL RANDOM_NUMBER( RAND(1))
 if (RAND(1) < alpha) THEN
 accept = 1
 if ( s > burn_in) AB = AB + 1!; PRINT*,like_prop,like
 endif
-elseif (death==1) then
+elseif (death==1) then !note that I_max and I_min are defined in the "perturbation" section of the code.
 if(out == 1) alpha = ((I_max-I_min)*prob)*exp(-like_prop+like)
 CALL RANDOM_NUMBER( RAND(1))
 if (RAND(1)<alpha) then
@@ -926,6 +929,21 @@ RETURN_INFO%mode_DFDT(:) = 0
 
 RETURN
 END SUBROUTINE RJMCMC
+
+SUBROUTINE Find_prior_bounds(age_query, lower_prior_limit, upper_prior_limit)
+IMPLICIT none
+REAL( KIND = 8) :: age_query, lower_prior_limit, upper_prior_limit, temp(1), age_query_vec(1)
+age_query_vec(1) = age_query
+
+IF( .NOT. ALLOCATED(PRIOR_INTENSITY_TIME_DEPENDENCE )) THEN; PRINT*, 'ARRAY PRIOR_INTENSITY_TIME_DEPENDENCE NOT ALLOCATED'; STOP; ENDIF
+
+call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,2), 1, age_query_vec(1:1), temp(1) )
+lower_prior_limit = temp(1)
+call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,3), 1, age_query_vec(1:1), temp(1) )
+upper_prior_limit = temp(1)
+RETURN
+END SUBROUTINE Find_prior_bounds
+
 
 
 SUBROUTINE Find_linear_interpolated_values( k, x_min, x_max, pt, endpt, nd, grid, interpolated_signal)
