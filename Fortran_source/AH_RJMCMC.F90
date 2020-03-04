@@ -12,7 +12,7 @@ USE AGE_HYPERPARAMETER_RJMCMC
 IMPLICIT NONE
 INTEGER, PARAMETER :: MAX_DATA  = 1000
 
-CHARACTER(len=500) :: ARG, Data_file_name, Header, WRITE_MODEL_FILE_NAME
+CHARACTER(len=500) :: ARG, Data_file_name, Header, WRITE_MODEL_FILE_NAME, Intensity_prior_file
 CHARACTER(len=500) :: inputline, junk, outputs_directory
 INTEGER ::  NARG
 CHARACTER(len=1) :: AGE_distribution(1:MAX_DATA), AGE_DISTRIBUTION_TYPE, STRATIFICATION_INDEX(1:MAX_DATA)
@@ -36,7 +36,7 @@ CHARACTER(len=20) :: ID(1:MAX_DATA)
 CHARACTER(1) :: Data_type(1: MAX_DATA), Data_type_specified
 CHARACTER(len=10) :: stratification_read_line(1: MAX_DATA)
 
-REAL( KIND = 8), ALLOCATABLE :: X(:)
+REAL( KIND = 8), ALLOCATABLE :: X(:), PRIOR_INTENSITY_TIME_DEPENDENCE(:,:)
 
 LOGICAL :: CALC_CREDIBLE, MULTIPLE_STRATIFIED_DATA
 Real ( KIND = 8) :: credible
@@ -76,6 +76,9 @@ input_random_seed = 1
 sd_uncertain_bound = -1
 age_frac = 0
 num_age_changes = 0
+I_min = 0.0_8
+I_max = 0.0_8
+Intensity_prior_file = ''
 
 DO
 READ(30,'(A)',END=101) inputline
@@ -84,6 +87,7 @@ IF ( to_upper(inputline(1:len('Age_distribution'))) == to_upper('Age_distributio
 IF ( to_upper(inputline(1:len('Data_type'))) == to_upper('Data_type') ) read(inputline(len('Data_type')+2:),*) Data_type_specified
 IF ( to_upper(inputline(1:len('File_format'))) == to_upper('File_format') ) read(inputline(len('File_format')+2:),*) id_col, age_col, d_age_col, F_col, dF_col,  type_col, distribution_col, strat_col
 IF ( to_upper(inputline(1:len('Intensity_prior'))) == to_upper('Intensity_prior') ) read(inputline(len('Intensity_prior')+2:),*) I_min, I_max
+IF ( to_upper(inputline(1:len('File_intensity_prior'))) == to_upper('File_intensity_prior') ) read(inputline(len('File_intensity_prior')+2:),*) Intensity_prior_file
 IF ( to_upper(inputline(1:len('Burn_in'))) == to_upper('Burn_in') ) read(inputline(len('Burn_in')+2:),*) burn_in
 IF ( to_upper(inputline(1:len('Nsamples'))) == to_upper('Nsamples') ) read(inputline(len('Burn_in')+2:),*) NSAMPLE
 IF ( to_upper(inputline(1:len('model_discretisation'))) == to_upper('model_discretisation') ) read(inputline(len('model_discretisation')+2:),*) discretise_size
@@ -357,6 +361,27 @@ ELSEIF (age_frac > 0) then !age_frac parameter set
 num_age_changes = MAX(1,floor(NUM_AGE_PARAMETERS/age_frac) )
 ELSE  !otherwise, num_age_changes set
 ENDIF
+
+!! Define the prior distribution on intensity
+! If a uniform bound is set, then create a simple matrix that contains this information
+! If a file is specified, then read the file
+IF( I_min .NE. 0.0_8) THEN  !a non-zero value indicates that the user has set the min/max values for a uniform bound
+ALLOCATE( PRIOR_INTENSITY_TIME_DEPENDENCE(2,3) )
+PRIOR_INTENSITY_TIME_DEPENDENCE(1,1) = X_MIN
+PRIOR_INTENSITY_TIME_DEPENDENCE(2,1) = X_MAX
+PRIOR_INTENSITY_TIME_DEPENDENCE(1:2,2) = I_min
+PRIOR_INTENSITY_TIME_DEPENDENCE(1:2,2) = I_max
+PRINT*, 'using numbers'
+ENDIF
+
+!check to see if file information is specified
+print*, 'LEN = ', len(Intensity_prior_file)
+
+!!!
+
+
+
+
 
 
 PRINT*, 'Number of age changes per resample-age perturbation is ', num_age_changes

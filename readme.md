@@ -192,6 +192,10 @@ Note that only one of age\_frac or num\_age\_changes should be set.
 min/max bounds on the assumed uniformly distributed intensity prior for vertices: 
 I\_min, I\_max in micro Tesla
 
+### File\_Intensity\_prior
+The filename giving the prior intensity distribution as a function of time
+If set, this option takes precedence over the Intensity\_prior setting.
+
 ### Num\_change\_points: K\_min, K\_max 
 Number of internal vertices is bounded to be within the interval [K\_min, K\_max]
 
