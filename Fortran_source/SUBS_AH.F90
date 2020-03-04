@@ -73,6 +73,9 @@ integer :: unit_write_models
 !needed to write to files in row format:
 WRITE(format_descriptor,'(A,i4,A)') '(',discretise_size,'F14.4)'
 
+ALLOCATE( interpolated_signal(1:max(NUM_DATA,discretise_size)) ) !generic output space for interpolation.
+
+
 ! Other parameters are fixed here
 
 k_max_array_bound = k_max + 1;
@@ -250,12 +253,22 @@ enddo
 DO i=1,k_init
 CALL RANDOM_NUMBER( RAND(1:2))
 !PRINT*, RAND(1:2), D_MIN, D_MAX, I_MIN, I_MAX
-pt(i,1)=D_min+rand(1) * (D_max-D_min)  ! position of internal vertex
+pt(i,1)=D_min+rand(1) * (D_max-D_min)  ! time-position of internal vertex
+
+call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,2), 1, pt(i,1), interpolated_signal(1) ); I_min = interpolated_signal(1)
+call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,3), 1, pt(i,1), interpolated_signal(1) ); I_max = interpolated_signal(1)
+!PRINT*, I_min, I_max,SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1)
 pt(i,2)=I_min+rand(2) * (I_max-I_min)  ! magnitude of vertices
 enddo
 
 CALL RANDOM_NUMBER (RAND(1:2))
+! Now assign initial value using time-dependent prior to end points:
+call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,2), 1, D_min, interpolated_signal(1) ); I_min = interpolated_signal(1)
+call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,3), 1, D_min, interpolated_signal(1) ); I_max = interpolated_signal(1)
 endpt(1) = I_min+RAND(1) * (I_max-I_min)
+
+call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,2), 1, D_max, interpolated_signal(1) ); I_min = interpolated_signal(1)
+call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,3), 1, D_max, interpolated_signal(1) ); I_max = interpolated_signal(1)
 endpt(2) = I_min+RAND(2) * (I_max-I_min)
 
 ! make sure the positions are sorted in ascending order.
@@ -280,7 +293,7 @@ DEALLOCATE (ORDER, pts_new)
 
 like=0;
 ! interpolate. First, assemble the complete linear description
-ALLOCATE( interpolated_signal(1:max(NUM_DATA,discretise_size)) ) !generic output space for interpolation.
+
 
 
 CALL Find_linear_interpolated_values( k, x_min, x_max, pt, endpt, NUM_DATA, age, interpolated_signal)
@@ -350,17 +363,30 @@ change_value = 1
 k_prop = k
 CALL RANDOM_NUMBER( RAND(1))
 ind=ceiling(RAND(1)*(k+2))
-! Check bounds to see if outside prior
 
+
+! Find prior bounds
+IF(ind == k+1)  then ! left end point
+age_query = D_min
+ELSEIF (ind == k+2) then !right end point
+age_query = D_max
+ELSE !internal point
+age_query = pt(ind,1)
+ENDIF
+
+call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,2), 1, age_query, interpolated_signal(1) ); I_min = interpolated_signal(1)
+call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,3), 1, age_query, interpolated_signal(1) ); I_max = interpolated_signal(1)
+
+! Alter value and check bounds to see if outside prior
 if(ind == k+1)  then! change left end point
 endpt_prop(1) = endpt(1) + randn()*sigma_change_value
-if( endpt_prop(1) < I_min .or. endpt_prop(1) > I_max ) out = 0
+    if( endpt_prop(1) < I_min .or. endpt_prop(1) > I_max ) out = 0
 elseif( ind == k+2) then ! change right end point
 endpt_prop(2) = endpt(2) + randn()*sigma_change_value
-if( endpt_prop(2) < I_min .or. endpt_prop(2) > I_max )out = 0
+    if( endpt_prop(2) < I_min .or. endpt_prop(2) > I_max )out = 0
 else ! change interior point
 pt_prop(ind,2) = pt(ind,2) + randn()*sigma_change_value
-if( pt_prop(ind,2)>I_max .or. pt_prop(ind,2)<I_min) out = 0
+    if( pt_prop(ind,2)>I_max .or. pt_prop(ind,2)<I_min) out = 0
 endif
 
 !-----------------------------------------------------------------------
@@ -397,6 +423,13 @@ prob = (1.0_8/(sigma_birth*sqrt(2.0_8*pi))) * &
 exp(-(interpolated_signal(1)-pt_prop(k+1,2))**2/(2.0_8*sigma_birth**2))
 
 !Check BOUNDS to see if outside prior
+
+! Find prior bounds
+call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,2), 1, pt_prop(k+1,1), interpolated_signal(1) ); I_min = interpolated_signal(1)
+call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,3), 1, pt_prop(k+1,1), interpolated_signal(1) ); I_max = interpolated_signal(1)
+
+
+
 out = 1
 if ((pt_prop(k+1,2)>I_max) .OR. (pt_prop(k+1,2)<I_min))  out = 0
 if ((pt_prop(k+1,1)>D_max) .OR. (pt_prop(k+1,1)<D_min))  out = 0
@@ -458,6 +491,16 @@ endif  !
 !Check BOUNDS
 out = 1
 if ( (pt_prop(ind,1) > D_max) .OR. (pt_prop(ind,1) < D_min) )  out = 0
+
+! Find prior bounds on intensity
+call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,2), 1, pt_prop(ind,1), interpolated_signal(1) ); I_min = interpolated_signal(1)
+call interp_linear( 1, SIZE(PRIOR_INTENSITY_TIME_DEPENDENCE,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,1), PRIOR_INTENSITY_TIME_DEPENDENCE(:,3), 1, pt_prop(ind,1), interpolated_signal(1) ); I_max = interpolated_signal(1)
+
+! check
+if ((pt_prop(ind,2)>I_max) .OR. (pt_prop(ind,2)<I_min))  out = 0
+
+
+
 
 !! check that all the time-points are different:
 DO WHILE ( CHECK_DIFFERENT( X_MIN, X_MAX, pt_prop(1:k,1)) .EQ. 1)
