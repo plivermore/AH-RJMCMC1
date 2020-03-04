@@ -10,7 +10,7 @@ USE AGE_HYPERPARAMETER_RJMCMC
 
 
 IMPLICIT NONE
-INTEGER, PARAMETER :: MAX_DATA  = 1000
+INTEGER, PARAMETER :: MAX_DATA  = 1000, MAX_PRIOR_INTENSITY_AGES = 100000
 
 CHARACTER(len=500) :: ARG, Data_file_name, Header, WRITE_MODEL_FILE_NAME, Intensity_prior_file
 CHARACTER(len=500) :: inputline, junk, outputs_directory
@@ -24,7 +24,7 @@ INTEGER :: input_random_seed
 REAL( KIND = 8) :: I_MAX, I_MIN, sigma_move, sigma_change_value, sigma_age, sigma_birth, int_j,&
 X_MIN, X_MAX, age_frac, sd_uncertain_bound, sd_sigma, sd_fraction
 
-INTEGER :: AGE_INDEX(1 : MAX_DATA), NUM_AGE_PARAMETERS
+INTEGER :: AGE_INDEX(1 : MAX_DATA), NUM_AGE_PARAMETERS, Number_rows_intensity_file
 CHARACTER(len=100), Allocatable :: LINE_READ(:)
 INTEGER, ALLOCATABLE :: SEED(:)
 
@@ -36,7 +36,7 @@ CHARACTER(len=20) :: ID(1:MAX_DATA)
 CHARACTER(1) :: Data_type(1: MAX_DATA), Data_type_specified
 CHARACTER(len=10) :: stratification_read_line(1: MAX_DATA)
 
-REAL( KIND = 8), ALLOCATABLE :: X(:), PRIOR_INTENSITY_TIME_DEPENDENCE(:,:)
+REAL( KIND = 8), ALLOCATABLE :: X(:), PRIOR_INTENSITY_TIME_DEPENDENCE(:,:), PRIOR_INTENSITY_TIME_DEPENDENCE_FILE(:,:)
 
 LOGICAL :: CALC_CREDIBLE, MULTIPLE_STRATIFIED_DATA
 Real ( KIND = 8) :: credible
@@ -375,8 +375,47 @@ PRINT*, 'using numbers'
 ENDIF
 
 !check to see if file information is specified
-print*, 'LEN = ', len(Intensity_prior_file)
+IF( len(TRIM(Intensity_prior_file) ) > 0) THEN
+IF(ALLOCATED(PRIOR_INTENSITY_TIME_DEPENDENCE)) DEALLOCATE( PRIOR_INTENSITY_TIME_DEPENDENCE)
 
+PRINT*, 'Using intensity prior file: ', TRIM(Intensity_prior_file)
+OPEN(30, FILE = Intensity_prior_file, STATUS = 'OLD', FORM = 'FORMATTED', &
+IOSTAT = IOS, ACTION = 'READ')
+IF( IOS .NE. 0) THEN
+PRINT*, 'ERROR IN OPENING FILE ', TRIM(Intensity_prior_file)
+STOP
+ENDIF
+READ(30,*) junk
+
+! read file until end:
+ALLOCATE( PRIOR_INTENSITY_TIME_DEPENDENCE_FILE(MAX_PRIOR_INTENSITY_AGES,3))
+DO i = 1,MAX_PRIOR_INTENSITY_AGES
+READ(30,'(A)', END = 901) inputline
+READ(inputline,*) PRIOR_INTENSITY_TIME_DEPENDENCE_FILE(i,1:3)
+!PRINT*, PRIOR_INTENSITY_TIME_DEPENDENCE_FILE(i,:)
+ENDDO
+
+901 CONTINUE
+CLOSE(30)
+ALLOCATE( PRIOR_INTENSITY_TIME_DEPENDENCE(i-1,3))
+PRIOR_INTENSITY_TIME_DEPENDENCE = PRIOR_INTENSITY_TIME_DEPENDENCE_FILE(1:i-1,1:3)
+DEALLOCATE( PRIOR_INTENSITY_TIME_DEPENDENCE_FILE )
+
+! check to make sure that the prior spans the whole age range
+IF( MINVAL(PRIOR_INTENSITY_TIME_DEPENDENCE(:,1)) > X_MIN .OR. MAXVAL(PRIOR_INTENSITY_TIME_DEPENDENCE(:,1)) < X_MAX  ) THEN
+PRINT*, 'INTENSITY PRIOR READ FROM FILE DOES NOT SPAN THE ENTIRE RANGE DEFINED BY X_MIN, X_MAX'
+PRINT*, PRIOR_INTENSITY_TIME_DEPENDENCE(:,1)
+STOP
+ENDIF
+
+! check to see whether prior is in age ascending order
+IF (.NOT. R8VEC_ASCENDS_STRICTLY ( Number_rows_intensity_file, PRIOR_INTENSITY_TIME_DEPENDENCE(:,1) )) THEN
+PRINT*, 'INTENSITY PRIOR READ FROM FILE DOES NOT AGE IN STRICTLY ASCENDING ORDER'
+STOP
+ENDIF
+
+STOP
+ENDIF
 !!!
 
 
@@ -391,7 +430,7 @@ PRINT*, 'Number of age changes per resample-age perturbation is ', num_age_chang
 
 ! copy input file
 call system('cp '//TRIM(ARG)//' '//TRIM(Outputs_directory)//'/input_file')
-CALL RJMCMC(burn_in, NUM_DATA, age(1:NUM_DATA), delta_age(1:NUM_DATA), intensity(1:NUM_DATA), delta_intensity(1:NUM_DATA), stratification(1: NUM_DATA), STRATIFICATION_INDEX(1:NUM_DATA), AGE_DISTRIBUTION(1:NUM_DATA), AGE_INDEX(1:NUM_AGE_PARAMETERS), NSAMPLE, I_MIN, I_MAX, X_MIN, X_MAX, K_MIN, K_MAX, SIGMA_MOVE, sigma_change_value, sigma_birth, sigma_age, age_frac, discretise_size, SHOW, THIN, NBINS, RETURN_INFO, CALC_CREDIBLE, FREQ_WRITE_MODELS, WRITE_MODEL_FILE_NAME, FREQ_WRITE_JOINT_DISTRIB,   credible, Outputs_directory, sd_uncertain_bound, sd_sigma, sd_fraction, num_age_changes)
+CALL RJMCMC(burn_in, NUM_DATA, age(1:NUM_DATA), delta_age(1:NUM_DATA), intensity(1:NUM_DATA), delta_intensity(1:NUM_DATA), stratification(1: NUM_DATA), STRATIFICATION_INDEX(1:NUM_DATA), AGE_DISTRIBUTION(1:NUM_DATA), AGE_INDEX(1:NUM_AGE_PARAMETERS), NSAMPLE, PRIOR_INTENSITY_TIME_DEPENDENCE, X_MIN, X_MAX, K_MIN, K_MAX, SIGMA_MOVE, sigma_change_value, sigma_birth, sigma_age, age_frac, discretise_size, SHOW, THIN, NBINS, RETURN_INFO, CALC_CREDIBLE, FREQ_WRITE_MODELS, WRITE_MODEL_FILE_NAME, FREQ_WRITE_JOINT_DISTRIB,   credible, Outputs_directory, sd_uncertain_bound, sd_sigma, sd_fraction, num_age_changes)
 
 
 
