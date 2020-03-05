@@ -76,8 +76,8 @@ input_random_seed = 1
 sd_uncertain_bound = -1
 age_frac = 0
 num_age_changes = 0
-I_min = 0.0_8
-I_max = 0.0_8
+I_min = -1.0_8
+I_max = -1.0_8
 Intensity_prior_file = ''
 
 DO
@@ -368,13 +368,13 @@ ENDIF
 
 ! If a uniform bound is set, then create a simple matrix that contains this information
 ! If a file is specified, then read the file
-IF( I_min .NE. 0.0_8) THEN  !a non-zero value indicates that the user has set the min/max values for a uniform bound
+IF( I_min .NE. -1.0_8) THEN  !a non-zero value indicates that the user has set the min/max values for a uniform bound
 ALLOCATE( PRIOR_INTENSITY_TIME_DEPENDENCE(2,3) )
 PRIOR_INTENSITY_TIME_DEPENDENCE(1,1) = X_MIN
 PRIOR_INTENSITY_TIME_DEPENDENCE(2,1) = X_MAX
 PRIOR_INTENSITY_TIME_DEPENDENCE(1:2,2) = I_min
 PRIOR_INTENSITY_TIME_DEPENDENCE(1:2,3) = I_max
-PRINT*, 'using numbers'
+!PRINT*, 'using numbers'
 ENDIF
 
 !check to see if file information is specified
