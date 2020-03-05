@@ -24,7 +24,7 @@ INTEGER :: input_random_seed
 REAL( KIND = 8) :: I_MAX, I_MIN, sigma_move, sigma_change_value, sigma_age, sigma_birth, int_j,&
 X_MIN, X_MAX, age_frac, sd_uncertain_bound, sd_sigma, sd_fraction
 
-INTEGER :: AGE_INDEX(1 : MAX_DATA), NUM_AGE_PARAMETERS, Number_rows_intensity_file
+INTEGER :: AGE_INDEX(1 : MAX_DATA), NUM_AGE_PARAMETERS, Number_rows_intensity_file, NUMBER_PRIOR_INTENSITY_POINTS
 CHARACTER(len=100), Allocatable :: LINE_READ(:)
 INTEGER, ALLOCATABLE :: SEED(:)
 
@@ -423,9 +423,10 @@ ENDIF
 ! check to make sure that the ordering lower/upper bounds is correct
 
 DO i=1, NUMBER_PRIOR_INTENSITY_POINTS
-IF( PRIOR_INTENSITY_TIME_DEPENDENCE(i,2) >= RIOR_INTENSITY_TIME_DEPENDENCE(i,3) ) THEN
+IF( PRIOR_INTENSITY_TIME_DEPENDENCE(i,2) >= PRIOR_INTENSITY_TIME_DEPENDENCE(i,3) ) THEN
 PRINT*, 'FORMAT OF FILE DESCRIBING PRIOR TIME-DEPENDENT INTENSITY MUST BE AGE, LOWER, UPPER'
 STOP
+ENDIF
 ENDDO
 
 ENDIF
