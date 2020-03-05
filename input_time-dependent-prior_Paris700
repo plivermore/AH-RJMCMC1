@@ -19,7 +19,7 @@ Data_file archeomagnetic_data/Paris700.txt
 File_format 0 2 3 4 5 -1 -1 -1
 # RJMCMC parameters
 Burn_in 50000
-Nsamples  2050000
+Nsamples  10050000
 # Discretistion size of the model
 model_discretisation 1000
 # Chain-forming parameters:  show, thinning
@@ -40,7 +40,7 @@ Age_frac 20.0
 #  Intensities: I_min, I_max in micro Tesla
 File_Intensity_prior Paris700_prior.dat 
 # Number of change points: K_min, K_max
-Num_change_points 1 50 
+Num_change_points 0 50 
 #
 # --------
 # Outputs

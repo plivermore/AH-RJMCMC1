@@ -362,7 +362,10 @@ num_age_changes = MAX(1,floor(NUM_AGE_PARAMETERS/age_frac) )
 ELSE  !otherwise, num_age_changes set
 ENDIF
 
+! ********************************************
 !! Define the prior distribution on intensity
+! ********************************************
+
 ! If a uniform bound is set, then create a simple matrix that contains this information
 ! If a file is specified, then read the file
 IF( I_min .NE. 0.0_8) THEN  !a non-zero value indicates that the user has set the min/max values for a uniform bound
@@ -370,7 +373,7 @@ ALLOCATE( PRIOR_INTENSITY_TIME_DEPENDENCE(2,3) )
 PRIOR_INTENSITY_TIME_DEPENDENCE(1,1) = X_MIN
 PRIOR_INTENSITY_TIME_DEPENDENCE(2,1) = X_MAX
 PRIOR_INTENSITY_TIME_DEPENDENCE(1:2,2) = I_min
-PRIOR_INTENSITY_TIME_DEPENDENCE(1:2,2) = I_max
+PRIOR_INTENSITY_TIME_DEPENDENCE(1:2,3) = I_max
 PRINT*, 'using numbers'
 ENDIF
 
@@ -512,7 +515,7 @@ OPEN(23, FILE = TRIM(Outputs_directory)//'/intensity_density.dat', STATUS = 'REP
 WRITE(23,*) discretise_size, NBINS
 DO i=1, discretise_size
 do j=1, NBINS
-WRITE(23,*) REAL(X(i), KIND = 4), REAL((REAL(j-1, KIND = 8)+0.5_8)/NBINS * (I_MAX-I_MIN) + I_MIN,KIND =4),&
+WRITE(23,*) REAL(X(i), KIND = 4), REAL((REAL(j-1, KIND = 8)+0.5_8)/NBINS * (I_MAX_GLOBAL-I_MIN_GLOBAL) + I_MIN_GLOBAL,KIND =4),&
 REAL(RETURN_INFO%MARGINAL_DENSITY_INTENSITY(i,j), KIND = 4)
 enddo
 ENDDO

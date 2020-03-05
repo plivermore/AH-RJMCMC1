@@ -20,6 +20,7 @@ if not os.path.exists('input_file'):
 # This can be overwritten by either altering this file, or simply hardwiring the various parameters: e.g.
 # age_min, age_max = 0, 100
 
+I_min = 0
 for line in open('input_file','r'):
     if not (line[0] == '#' or line == '\n'): #skip comments or blank lines...
         if line.split()[0].upper() == 'Intensity_prior'.upper():
@@ -44,7 +45,15 @@ for line in open('input_file','r'):
             Burn_in = int(line.split()[1])
         if line.split()[0].upper() == 'Outputs_directory'.upper():
             outputs_directory = line.split()[1]
+        if line.split()[0].upper() == 'running_mode'.upper():
+            running_mode = int(line.split()[1])
+
 # read in the various data files that were output by the RJ-MCMC script
+
+if I_min == 0:
+    print('Max/min bounds on intensity for plotting are not set.\n')
+    print('Set "Plotting_age_range" in the inputfile\n')
+    sys.exit(0)
 
 x, x_err, y, y_err, strat = np.loadtxt('data.dat', unpack=True)
 strat = [int(a) for a in strat]
@@ -164,6 +173,8 @@ print('Building plot of misfit...')
 iterations, misfit = np.loadtxt('misfit.dat',unpack=True)
 fig5, ax = plt.subplots (figsize=(8,5) )
 ax.plot(iterations, misfit,'k')
+if running_mode == 0:  #prior sampling
+    ax.set_ylim([0.1,2])  #all values are 1 in the misfit.
 ax.set_yscale('log')
 ax.set_title('Misfit against iteration count',fontsize=16)
 ax.set_xlabel('Iteration count',fontsize=16)
@@ -172,12 +183,19 @@ ax.xaxis.set_tick_params(labelsize=16)
 ax.yaxis.set_tick_params(labelsize=16)
 
 # add red bar to indicate the burn-in end
+
 ax.bar(Burn_in,height=misfit.max(),width=iterations.max()/100,bottom = 0, align = 'center',color='red')
 plt.savefig('Misfit.pdf', bbox_inches='tight',pad_inches=0.4)
 plt.close(fig5)
 
 # Make a plot of the density
-threshold = 0.01
+
+# threshold below which we ignore density:
+if running_mode == 1:  #posterior pdf
+    threshold = 0.01
+else:
+    threshold = 0  #test run using prior sampling; keep all data.
+
 print('Building plot of density...')
 fig6, ax = plt.subplots ( figsize=(14,5))
 
@@ -212,8 +230,6 @@ int_density_refined[ int_density_refined < threshold] = 0.0
 
 plt.imshow(int_density_refined, origin='lower',cmap = cm.jet,extent=(x_density[0,0],x_density[0,-1],y_density[0,0],y_density[-1,0]), aspect='auto', norm=LogNorm(vmin=0.01, vmax=0.6),interpolation="nearest")
 #ax2.set_ylabel('Intensity/$\mu$T',fontsize=16)
-
-
 
 #plt.xlim(x_density[0,0],x_density[-1,0])
 #plt.ylim(y_density[0,0],y_density[0,-1])

@@ -25,7 +25,7 @@ model_discretisation 1000
 # Chain-forming parameters:  show, thinning
 Chain_parameters 10000 100 
 # Running mode: 1 - normal, 0 - set all likelihoods to 1 to recover the prior distributions.
-running_mode 1 
+running_mode 0 
 # Age Min and Max for model parametrisation
 Age_bounds -1260 2100
 # Parameters that describe the various model perturbations:

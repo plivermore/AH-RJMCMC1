@@ -29,7 +29,7 @@ END TYPE RETURN_INFO_STRUCTURE
 
 INTEGER, PARAMETER :: AGE_ASCENDING = 1, AGE_DESCENDING = 2
 REAL( KIND = 8), ALLOCATABLE :: PRIOR_INTENSITY_TIME_DEPENDENCE(:,:)
-
+REAL( KIND = 8) :: I_MAX_GLOBAL, I_MIN_GLOBAL
 REAL( KIND = 8), PARAMETER :: PI = 3.14159265358979_8
 INTEGER :: RUNNING_MODE
 
@@ -46,7 +46,7 @@ NBINS, BIN_INDEX, IS_DIFF, CHANGE_AGE, CHANGE_value, i_age, FREQ_WRITE_MODELS, I
 FREQ_WRITE_JOINT_DISTRIB, SAMPLE_INDEX_JOINT_DISTRIBUTION, change_sd_factor
 REAL( KIND = 8) :: D_MIN, D_MAX, I_MAX, I_MIN, sigma_move, sigma_change_value, &
 sigma_birth, sigma_age, like_prop, prob, INT_J, pt_death(2), &
-X_MIN, X_MAX, U, RAND(2), alpha, TEMP_RAND, AGE_FACTOR_FOR_PRIOR, I_MAX_GLOBAL, I_MIN_GLOBAL
+X_MIN, X_MAX, U, RAND(2), alpha, TEMP_RAND, AGE_FACTOR_FOR_PRIOR
 CHARACTER(300) :: WRITE_MODEL_FILE_NAME, format_descriptor, FILENAME
 CHARACTER(1) :: AGE_DISTRIBUTION(:)
 CHARACTER :: STRATIFICATION_INDEX(1:NUM_DATA)
@@ -78,6 +78,10 @@ ALLOCATE( interpolated_signal(1:max(NUM_DATA,discretise_size)) ) !generic output
 
 
 ! Other parameters are fixed here
+
+!PRINT*, PRIOR_INTENSITY_TIME_DEPENDENCE(1,:)
+!PRINT*,PRIOR_INTENSITY_TIME_DEPENDENCE(2,:)
+!stop
 
 k_max_array_bound = k_max + 1;
 
@@ -659,7 +663,7 @@ alpha = 0
 ! The acceptance term takes different
 ! values according the the proposal that has been made.
 
-if (birth == 1) then  !note that I_max and I_min are defined in the "perturbation" section of the code.
+if (birth == 1) then  !note that the relevant values of I_max and I_min are defined in the "perturbation" section of the code.
 if(out ==1) alpha = ((1.0_8/((I_max-I_min)*prob))*exp(-like_prop+like))
 CALL RANDOM_NUMBER( RAND(1))
 if (RAND(1) < alpha) THEN
@@ -673,7 +677,7 @@ if (RAND(1)<alpha) then
 accept=1
 if (s>burn_in) AD = AD + 1
 endif
-else ! NO JUMP, i.e no change in dimension
+else ! NO JUMP, i.e no change in dimension. If a "move" perturbation, then sd_factor/sd_factor_prop = 1
 if(out ==1) alpha = exp(-like_prop+like) * AGE_FACTOR_FOR_PRIOR * (sd_factor/sd_factor_prop)**NUM_DATA   !this latter factor is the pre-factor in the normal distribution
 CALL RANDOM_NUMBER( RAND(1))
 if (RAND(1)<alpha) then
