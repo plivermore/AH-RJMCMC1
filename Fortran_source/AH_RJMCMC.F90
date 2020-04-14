@@ -29,11 +29,11 @@ CHARACTER(len=100), Allocatable :: LINE_READ(:)
 INTEGER, ALLOCATABLE :: SEED(:)
 
 INTEGER :: stratification(1:MAX_DATA)
-INTEGER ::  age_col, d_age_col, F_col, dF_col, distribution_col, id_col, type_col, strat_col
+INTEGER ::  age_col, d_age_col, F_col, dF_col, distribution_col, id_col, type_col, strat_col, like_col
 
 REAL( KIND = 8) :: age(1:MAX_DATA), delta_age(1:MAX_DATA),  intensity(1:MAX_DATA), delta_intensity(1:MAX_DATA)
 CHARACTER(len=20) :: ID(1:MAX_DATA)
-CHARACTER(1) :: Data_type(1: MAX_DATA), Data_type_specified
+CHARACTER(1) :: Data_type(1: MAX_DATA), Data_type_specified, like_type(1:MAX_DATA)
 CHARACTER(len=10) :: stratification_read_line(1: MAX_DATA)
 
 REAL( KIND = 8), ALLOCATABLE :: X(:)
@@ -82,7 +82,7 @@ READ(30,'(A)',END=101) inputline
 IF ( to_upper(inputline(1:len('Data_file'))) == to_upper('Data_file') ) read(inputline(len('Data_file')+2:),'(A)') Data_file_name
 IF ( to_upper(inputline(1:len('Age_distribution'))) == to_upper('Age_distribution') ) read(inputline(len('Age_distribution')+2:),*) AGE_DISTRIBUTION_TYPE
 IF ( to_upper(inputline(1:len('Data_type'))) == to_upper('Data_type') ) read(inputline(len('Data_type')+2:),*) Data_type_specified
-IF ( to_upper(inputline(1:len('File_format'))) == to_upper('File_format') ) read(inputline(len('File_format')+2:),*) id_col, age_col, d_age_col, F_col, dF_col,  type_col, distribution_col, strat_col
+IF ( to_upper(inputline(1:len('File_format'))) == to_upper('File_format') ) read(inputline(len('File_format')+2:),*) id_col, age_col, d_age_col, F_col, dF_col,  type_col, distribution_col, strat_col, like_col
 IF ( to_upper(inputline(1:len('Intensity_prior'))) == to_upper('Intensity_prior') ) read(inputline(len('Intensity_prior')+2:),*) I_min, I_max
 IF ( to_upper(inputline(1:len('Burn_in'))) == to_upper('Burn_in') ) read(inputline(len('Burn_in')+2:),*) burn_in
 IF ( to_upper(inputline(1:len('Nsamples'))) == to_upper('Nsamples') ) read(inputline(len('Burn_in')+2:),*) NSAMPLE
@@ -118,7 +118,7 @@ PRINT*, 'ERROR IN OPENING FILE ', TRIM(Data_file_name)
 STOP
 ENDIF
 
-ALLOCATE( LINE_READ(1: max(id_col, age_col, d_age_col, F_col, dF_col, distribution_col, type_col, strat_col)+1) )
+ALLOCATE( LINE_READ(1: max(id_col, age_col, d_age_col, F_col, dF_col, distribution_col, type_col, strat_col, like_col)+1) )
 
 !write(OUTPUT_unit, fmt="(a,2x,i4)") "strat_col = ", strat_col
 
@@ -139,6 +139,7 @@ READ(LINE_READ(d_age_col+1),*) delta_age(i)
 READ(LINE_READ(F_col+1),*) intensity(i)
 READ(LINE_READ(dF_col+1),*) delta_intensity(i)
 
+IF( type_col .GE. -1) READ(LINE_READ(like_col+1),*) like_type(i)
 IF( type_col .GE. 0) READ(LINE_READ(type_col+1),*) data_type(i)
 IF( distribution_col .GE. 0) READ(LINE_READ(distribution_col+1),*) AGE_distribution(i)
 IF( strat_col .NE. -1) READ(LINE_READ(strat_col+1),*) stratification_read_line(i)
@@ -197,6 +198,19 @@ X_MIN = MINVAL( AGE(1:NUM_DATA) ) - X_MIN
 X_MAX = MAXVAL( AGE(1:NUM_DATA) ) + X_MAX
 ENDIF
 
+
+IF( distribution_col .EQ. -1) THEN
+AGE_DISTRIBUTION(:) = 'U'
+PRINT*, 'SETTING GLOBAL AGE DISTRIBUTION TO UNIFORM'
+ELSEIF( distribution_col .EQ. -2) THEN
+AGE_DISTRIBUTION(:) = 'N'
+PRINT*, 'SETTING GLOBAL AGE DISTRIBUTION TO NORMAL'
+ELSEIF( distribution_col < 0) THEN
+PRINT*, 'ERROR: UNKNOWN VALUE FOR PARAMETER DESCRIBING AGE DISTRIBUTION ', distribution_col
+STOP
+ENDIF
+
+
 ! Check to see that X_MIN and X_MAX enclose the data set:
 
 DO i = 1, NUM_DATA
@@ -231,17 +245,6 @@ ENDIF
 IF( type_col < 0 ) THEN
 data_type(:) = 'O'   ! Set to O(ther): never referenced.
 PRINT*, 'NO SPECIFICATION OF DATA TYPE: SETTING GLOBAL TYPE TO (O)THER'
-ENDIF
-
-IF( distribution_col .EQ. -1) THEN
-AGE_DISTRIBUTION(:) = 'U'
-PRINT*, 'SETTING GLOBAL AGE DISTRIBUTION TO UNIFORM'
-ELSEIF( distribution_col .EQ. -2) THEN
-AGE_DISTRIBUTION(:) = 'N'
-PRINT*, 'SETTING GLOBAL AGE DISTRIBUTION TO NORMAL'
-ELSEIF( distribution_col < 0) THEN
-PRINT*, 'ERROR: UNKNOWN VALUE FOR PARAMETER DESCRIBING AGE DISTRIBUTION ', distribution_col
-STOP
 ENDIF
 
 
@@ -358,7 +361,25 @@ num_age_changes = MAX(1,floor(NUM_AGE_PARAMETERS/age_frac) )
 ELSE  !otherwise, num_age_changes set
 ENDIF
 
+PRINT*, '*******LIKEHOODS*********************'
+! check likelihood types
+IF( like_col .EQ. -1) THEN
+PRINT*,'SETTING ALL LIKELIHOODS TO NORMAL'
+LIKE_TYPE(1:NUM_DATA) = 'N'
+ENDIF
 
+DO i = 1,NUM_DATA
+IF( LIKE_TYPE(i) == 'G' .OR. LIKE_TYPE(i) == 'g' .OR. LIKE_TYPE(i) == 'n' ) LIKE_TYPE(i) = 'N'
+IF( LIKE_TYPE(i) == 'u') LIKE_TYPE(i) = 'U'
+IF( .NOT. ( LIKE_TYPE(i) == 'N' .OR. LIKE_TYPE(i) == 'U')) THEN
+PRINT*, 'LIKELIHOOD TYPE IS NOT EITHER G, N or U'
+STOP
+ENDIF
+ENDDO
+
+PRINT*, 'Normal likelihoods: ', COUNT( LIKE_TYPE(1:NUM_DATA) == 'N')
+PRINT*, 'Uniform likelihoods: ', COUNT( LIKE_TYPE(1:NUM_DATA) == 'U')
+PRINT*, '*************************************'
 PRINT*, 'Number of age changes per resample-age perturbation is ', num_age_changes
 
 
