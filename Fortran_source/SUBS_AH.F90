@@ -33,7 +33,7 @@ REAL( KIND = 8), PARAMETER :: PI = 3.14159265358979_8
 INTEGER :: RUNNING_MODE
 
 CONTAINS
-SUBROUTINE RJMCMC(burn_in, NUM_DATA, MIDPOINT_AGE, DELTA_AGE, INTENSITY, I_SD, STRATIFIED, STRATIFICATION_INDEX, AGE_DISTRIBUTION, AGE_INDICES, NSAMPLE, I_MIN, I_MAX, X_MIN, X_MAX, K_MIN, K_MAX, SIGMA_MOVE, sigma_change_value, sigma_birth, sigma_age, age_frac, discretise_size, SHOW, THIN, NBINS, RETURN_INFO, CALC_CREDIBLE, FREQ_WRITE_MODELS, WRITE_MODEL_FILE_NAME, FREQ_WRITE_JOINT_DISTRIB, credible, Outputs_directory, sd_uncertain_bound, sd_sigma, sd_fraction, num_age_changes)
+SUBROUTINE RJMCMC(burn_in, NUM_DATA, MIDPOINT_AGE, DELTA_AGE, INTENSITY, I_SD, LIKE_TYPE, STRATIFIED, STRATIFICATION_INDEX, AGE_DISTRIBUTION, AGE_INDICES, NSAMPLE, I_MIN, I_MAX, X_MIN, X_MAX, K_MIN, K_MAX, SIGMA_MOVE, sigma_change_value, sigma_birth, sigma_age, age_frac, discretise_size, SHOW, THIN, NBINS, RETURN_INFO, CALC_CREDIBLE, FREQ_WRITE_MODELS, WRITE_MODEL_FILE_NAME, FREQ_WRITE_JOINT_DISTRIB, credible, Outputs_directory, sd_uncertain_bound, sd_sigma, sd_fraction, num_age_changes)
 
 
 IMPLICIT NONE
@@ -47,7 +47,7 @@ REAL( KIND = 8) :: D_MIN, D_MAX, I_MAX, I_MIN, sigma_move, sigma_change_value, &
 sigma_birth, sigma_age, like_prop, prob, INT_J, pt_death(2), &
 X_MIN, X_MAX, U, RAND(2), alpha, TEMP_RAND, AGE_FACTOR_FOR_PRIOR
 CHARACTER(300) :: WRITE_MODEL_FILE_NAME, format_descriptor, FILENAME
-CHARACTER(1) :: AGE_DISTRIBUTION(:)
+CHARACTER(1) :: AGE_DISTRIBUTION(:), LIKE_TYPE(:)
 CHARACTER :: STRATIFICATION_INDEX(1:NUM_DATA)
 INTEGER, ALLOCATABLE :: ORDER(:)
 REAL( KIND = 8) :: ENDPT_BEST(2), age_frac, credible, age1, age2, sd_uncertain_bound, sd_sigma, sd_fraction
@@ -61,7 +61,7 @@ REAL( KIND = 8), ALLOCATABLE :: VAL_MIN(:), VAL_MAX(:),   MINI(:,:), MAXI(:,:), 
 REAL( KIND = 8), ALLOCATABLE :: interpolated_signal(:), X(:), PTS_NEW(:,:), PT_BEST(:,:), age(:), age_prop(:), interpolated_signal_grad(:), X2(:)
 INTEGER, ALLOCATABLE, DIMENSION(:) :: IND_MIN, IND_MAX
 INTEGER, ALLOCATABLE :: discrete_history(:,:)
-LOGICAL :: CALC_CREDIBLE
+LOGICAL :: CALC_CREDIBLE, ALREADY_HERE
 
 ! For dF/dt:
 INTEGER, ALLOCATABLE :: discrete_dFdt(:,:)
@@ -223,10 +223,8 @@ ENDIF
 
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-! Initialize - Define randomly the first model of the chain
-CALL RANDOM_NUMBER( RAND(1))
-k_init = floor(RAND(1) * (K_max - K_min+1)) + k_min
-k = k_init
+! Initialize - Define the first model of the chain to be very close to the data
+!
 
 !set the data ages to be the given nominal age (i.e. discount any age error). This is so datasets with stratification are valid for the initial model.
 ! If we randomised the ages, we'd have to check that stratification was satifisfied, and it could take a while before we find a valid model.
@@ -247,16 +245,20 @@ IF( AGE(i) < D_MIN) AGE(I) = D_MIN
 IF( AGE(I) > D_MAX) AGE(I) = D_MAX
 enddo
 
-DO i=1,k_init
-CALL RANDOM_NUMBER( RAND(1:2))
-!PRINT*, RAND(1:2), D_MIN, D_MAX, I_MIN, I_MAX
-pt(i,1)=D_min+rand(1) * (D_max-D_min)  ! position of internal vertex
-pt(i,2)=I_min+rand(2) * (I_max-I_min)  ! magnitude of vertices
-enddo
+k_init = NUM_DATA
+DO i=1,NUM_DATA
+CALL RANDOM_NUMBER (RAND(1:2))
+AGE(i) = AGE(i)+0.5*(rand(1)-1) * DELTA_AGE(i) ! ages
+pt(i,1)= AGE(i)
+pt(i,2)=intensity(i)+0.5*(rand(2)-1) * I_sd(i) ! magnitude of vertices
+ENDDO
 
 CALL RANDOM_NUMBER (RAND(1:2))
 endpt(1) = I_min+RAND(1) * (I_max-I_min)
 endpt(2) = I_min+RAND(2) * (I_max-I_min)
+
+
+!PRINT*, pt(1:k_init,1)
 
 ! make sure the positions are sorted in ascending order.
 ALLOCATE( ORDER(1:k_init), pts_new(1:k_init,1:2) )
@@ -264,6 +266,7 @@ ALLOCATE( ORDER(1:k_init), pts_new(1:k_init,1:2) )
 ! Find the order that sorts the first row of the array pt:
 order = rargsort(pt(1:k_init,1))
 
+!PRINT*, order, k_init
 ! Sort both the values and ages based on this ordering:
 do i = 1, k_init
 pts_new(i,1:2) = pt( order(i), 1:2)
@@ -274,9 +277,9 @@ DEALLOCATE (ORDER, pts_new)
 
 ! COMPUTE INITIAL MISFIT
 
+k = k_init
 
-
-
+!PRINT*, pt(1:k_init,1)
 
 like=0;
 ! interpolate. First, assemble the complete linear description
@@ -291,7 +294,16 @@ IF( RUNNING_MODE .eq. 1) THEN
 
 !compute assuming unscaled standard deviation
 do i=1,NUM_DATA
+IF( LIKE_TYPE(i) == 'N') THEN
 like=like+(Intensity(i) - interpolated_signal(i))**2/(2.0_8 * I_sd(i)**2)
+ELSE
+! uniform distribution. If within range then don't do anything -- the likelihoods cancel out anyway. Otherwise, set to 1E99 (as an approximation to -log(0) = Inf)
+IF( abs(Intensity(i) - interpolated_signal(i)) > I_sd(i) ) THEN
+    PRINT*, i, age(i), Intensity(i), interpolated_signal(i), I_sd(i)
+    like = 1.0E99_8
+ENDIF
+ENDIF
+
 enddo
 else
 like = 1.0_8
@@ -300,6 +312,7 @@ endif
 like_best=like
 like_init=like
 
+Print*, 'Initial likelihood is ', like
 sd_factor_prop = 1.0_8
 sd_factor = 1.0_8
 
@@ -588,7 +601,14 @@ CALL Find_linear_interpolated_values( k_prop, x_min, x_max, pt_prop, endpt_prop,
 IF( RUNNING_MODE .eq. 1) THEN
 do i=1,NUM_DATA
 ! sd_prop is set to 1 unless the error budget is sought as part of the inversion
+
+IF ( LIKE_TYPE(i) == 'N') THEN
 like_prop=like_prop+(Intensity(i) - interpolated_signal(i))**2/(2.0_8 * sd_factor_prop**2 * I_sd(i)**2)
+ELSE
+! uniform distribution. If within range then don't do anything -- the likelihoods cancel out anyway. Otherwise, set out = 0 to reject.
+IF( abs(Intensity(i) - interpolated_signal(i)) > sd_factor_prop * I_sd(i) ) out = 0
+ENDIF
+
 enddo
 else
 like_prop = 1.0_8

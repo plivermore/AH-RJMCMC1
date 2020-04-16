@@ -387,7 +387,7 @@ PRINT*, 'Number of age changes per resample-age perturbation is ', num_age_chang
 
 ! copy input file
 call system('cp '//TRIM(ARG)//' '//TRIM(Outputs_directory)//'/input_file')
-CALL RJMCMC(burn_in, NUM_DATA, age(1:NUM_DATA), delta_age(1:NUM_DATA), intensity(1:NUM_DATA), delta_intensity(1:NUM_DATA), stratification(1: NUM_DATA), STRATIFICATION_INDEX(1:NUM_DATA), AGE_DISTRIBUTION(1:NUM_DATA), AGE_INDEX(1:NUM_AGE_PARAMETERS), NSAMPLE, I_MIN, I_MAX, X_MIN, X_MAX, K_MIN, K_MAX, SIGMA_MOVE, sigma_change_value, sigma_birth, sigma_age, age_frac, discretise_size, SHOW, THIN, NBINS, RETURN_INFO, CALC_CREDIBLE, FREQ_WRITE_MODELS, WRITE_MODEL_FILE_NAME, FREQ_WRITE_JOINT_DISTRIB,   credible, Outputs_directory, sd_uncertain_bound, sd_sigma, sd_fraction, num_age_changes)
+CALL RJMCMC(burn_in, NUM_DATA, age(1:NUM_DATA), delta_age(1:NUM_DATA), intensity(1:NUM_DATA), delta_intensity(1:NUM_DATA), LIKE_TYPE(1:NUM_DATA), stratification(1: NUM_DATA), STRATIFICATION_INDEX(1:NUM_DATA), AGE_DISTRIBUTION(1:NUM_DATA), AGE_INDEX(1:NUM_AGE_PARAMETERS), NSAMPLE, I_MIN, I_MAX, X_MIN, X_MAX, K_MIN, K_MAX, SIGMA_MOVE, sigma_change_value, sigma_birth, sigma_age, age_frac, discretise_size, SHOW, THIN, NBINS, RETURN_INFO, CALC_CREDIBLE, FREQ_WRITE_MODELS, WRITE_MODEL_FILE_NAME, FREQ_WRITE_JOINT_DISTRIB,   credible, Outputs_directory, sd_uncertain_bound, sd_sigma, sd_fraction, num_age_changes)
 
 
 

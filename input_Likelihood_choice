@@ -40,7 +40,7 @@ Age_frac 20.0
 #  Intensities: I_min, I_max in micro Tesla
 Intensity_prior 30 100 
 # Number of change points: K_min, K_max
-Num_change_points 1 50 
+Num_change_points 1 150 
 #
 # --------
 # Outputs
