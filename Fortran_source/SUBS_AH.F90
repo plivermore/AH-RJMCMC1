@@ -299,7 +299,7 @@ like=like+(Intensity(i) - interpolated_signal(i))**2/(2.0_8 * I_sd(i)**2)
 ELSE
 ! uniform distribution. If within range then don't do anything -- the likelihoods cancel out anyway. Otherwise, set to 1E99 (as an approximation to -log(0) = Inf)
 IF( abs(Intensity(i) - interpolated_signal(i)) > I_sd(i) ) THEN
-    PRINT*, i, age(i), Intensity(i), interpolated_signal(i), I_sd(i)
+    !PRINT*, i, age(i), Intensity(i), interpolated_signal(i), I_sd(i)
     like = 1.0E99_8
 ENDIF
 ENDIF
