@@ -258,7 +258,7 @@ plt.close()
 
 # Plot shape of oldest spike as fn of intensity error budget
 fig2,ax2 = plt.subplots(figsize=(6,4))
-dirs2 = [dir_base+'Outputs_Frag_200M/', #'likelihood_choice/AH-RJMCMC1-likelihood_choice/Outputs_Frag_200M/',
+dirs2 = [dir_base+'Outputs_Frag_200M/',
         dir_base+'Outputs_Frag_min_3_200M/', dir_base+'Outputs_Frag_min_4_200M/', dir_base+'Outputs_Frag_min_5_200M/', dir_base+'Outputs_Frag_min_6_200M/']
 titles=['Raw', r'Min 3$~\mu T$', r'Min 4$~\mu T$', r'Min 5$~\mu T$', r'Min 6$~\mu T$']
 linestyle_fig2b = ["solid", "dashed" ,(0,(5,10)), "dotted", "dashdot",]
@@ -312,7 +312,7 @@ ax2.margins(0.2)
 # Tweak spacing to prevent clipping of tick-labels
 plt.subplots_adjust(bottom=0.15)
 
-dirs = [dir_base+'Outputs_Frag_200M/', 'likelihood_choice/AH-RJMCMC1-likelihood_choice/Outputs_Frag_200M/',
+dirs = [dir_base+'Outputs_Frag_200M/', dir_base+'Outputs_Frag_extended_errors_normal_200M/',
          dir_base+'Outputs_Frag_min_3_200M/', dir_base+'Outputs_Frag_min_4_200M/', dir_base+'Outputs_Frag_min_5_200M/', dir_base+'Outputs_Frag_min_6_200M/']
 
 median_x, median_y = np.loadtxt(dir_base+'Outputs_Frag_200M/' +'median.dat', unpack=True)

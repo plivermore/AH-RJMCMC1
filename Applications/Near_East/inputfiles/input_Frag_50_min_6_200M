@@ -4,7 +4,7 @@
 # Data_file 
 data_file archeomagnetic_data/Fragment_T50_min_6_spikes.txt
 #
-# Column indices for data file, in the order: ID, age, delta age, intensity, delta intensity, data type, age distribution, stratification
+# Column indices for data file, in the order: ID, age, delta age, intensity, delta intensity, data type, age distribution, stratification, likelihood type
 # where column 0 is the first, column 1 is the second etc.
 #
 # Data type:  If data type is not specified as column data, set this parameter to -1. All data will be assigned a type "O" (other).
@@ -15,8 +15,11 @@ data_file archeomagnetic_data/Fragment_T50_min_6_spikes.txt
 #
 # Stratification: the column containing stratification information (in the column data: 0 is unstratified, non zero indicates stratification). 
 # To ignore stratification, set the stratification parameter to -1
+# 
+# Likelihood of intensity: the column containing likelihood information (in the data file "U" denotes uniform likelihood, "N" denotes a normal distribution)
+# To set globally to a normal distribution (the typical case), set this parameter to -1
 #
-File_format 0 2 3 4 5 1 -1 8 
+File_format 0 2 3 4 5 1 -1 8 -1
 # RJMCMC parameters
 Burn_in 50000
 Nsamples  200050000

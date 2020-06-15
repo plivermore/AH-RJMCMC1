@@ -61,7 +61,7 @@ REAL( KIND = 8), ALLOCATABLE :: VAL_MIN(:), VAL_MAX(:),   MINI(:,:), MAXI(:,:), 
 REAL( KIND = 8), ALLOCATABLE :: interpolated_signal(:), X(:), PTS_NEW(:,:), PT_BEST(:,:), age(:), age_prop(:), interpolated_signal_grad(:), X2(:)
 INTEGER, ALLOCATABLE, DIMENSION(:) :: IND_MIN, IND_MAX
 INTEGER, ALLOCATABLE :: discrete_history(:,:)
-LOGICAL :: CALC_CREDIBLE, ALREADY_HERE
+LOGICAL :: CALC_CREDIBLE, ALL_NORMAL_INTENSITY_DISTRIBUTION
 
 ! For dF/dt:
 INTEGER, ALLOCATABLE :: discrete_dFdt(:,:)
@@ -245,7 +245,29 @@ IF( AGE(i) < D_MIN) AGE(I) = D_MIN
 IF( AGE(I) > D_MAX) AGE(I) = D_MAX
 enddo
 
+! In the usual case (normal intensity likelihoods) use a random initial condition
+ALL_NORMAL_INTENSITY_DISTRIBUTION = .TRUE.
+DO i = 1, NUM_DATA
+IF( LIKE_TYPE(i) == 'U') ALL_NORMAL_INTENSITY_DISTRIBUTION = .FALSE.
+ENDDO
+
+IF( ALL_NORMAL_INTENSITY_DISTRIBUTION ) THEN
+PRINT*, 'USING A GENERALISED INITIAL MODEL RANDOM CONDITION'
+CALL RANDOM_NUMBER( RAND(1))
+k_init = floor(RAND(1) * (K_max - K_min+1)) + k_min
+k = k_init
+
+DO i=1,k_init
+CALL RANDOM_NUMBER( RAND(1:2))
+!PRINT*, RAND(1:2), D_MIN, D_MAX, I_MIN, I_MAX
+pt(i,1)=D_min+rand(1) * (D_max-D_min)  ! position of internal vertex
+pt(i,2)=I_min+rand(2) * (I_max-I_min)  ! magnitude of vertices
+enddo
+ELSE  ! If some data have a uniform distribution in intensity, we need to create a special initial condition that pretty much fits the data.
+PRINT*,'USING AN INITIAL MODEL RANDOM CONDITION CLOSE TO ALL THE DATA'
 k_init = NUM_DATA
+k = k_init
+
 DO i=1,NUM_DATA
 CALL RANDOM_NUMBER (RAND(1:2))
 AGE(i) = AGE(i)+0.5*(rand(1)-1) * DELTA_AGE(i) ! ages
@@ -253,12 +275,13 @@ pt(i,1)= AGE(i)
 pt(i,2)=intensity(i)+0.5*(rand(2)-1) * I_sd(i) ! magnitude of vertices
 ENDDO
 
+ENDIF
+
+! Now randomly choose the end points:
 CALL RANDOM_NUMBER (RAND(1:2))
 endpt(1) = I_min+RAND(1) * (I_max-I_min)
 endpt(2) = I_min+RAND(2) * (I_max-I_min)
 
-
-!PRINT*, pt(1:k_init,1)
 
 ! make sure the positions are sorted in ascending order.
 ALLOCATE( ORDER(1:k_init), pts_new(1:k_init,1:2) )
