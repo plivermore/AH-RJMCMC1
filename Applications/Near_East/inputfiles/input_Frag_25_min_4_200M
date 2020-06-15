@@ -1,0 +1,64 @@
+# --------
+# Input file 
+# --------
+# Data_file 
+data_file archeomagnetic_data/Fragment_T25_min_4_spikes.txt
+#
+# Column indices for data file, in the order: ID, age, delta age, intensity, delta intensity, data type, age distribution, stratification
+# where column 0 is the first, column 1 is the second etc.
+#
+# Data type:  If data type is not specified as column data, set this parameter to -1. All data will be assigned a type "O" (other).
+# 
+# Age distribution of data: If age distribution is globally specified (and is not specified by column data):
+#  -1 is uniform (with centre point given by the read age, and half-width given by the read delta age)
+#  -2 is normal distribution (with mean given by the read age, and standard deviation given by delta age)
+#
+# Stratification: the column containing stratification information (in the column data: 0 is unstratified, non zero indicates stratification). 
+# To ignore stratification, set the stratification parameter to -1
+#
+File_format 0 2 3 4 5 1 -1 8 
+# RJMCMC parameters
+Burn_in 50000
+Nsamples  200050000
+# Discretistion size of the model
+model_discretisation 801
+# Chain-forming parameters:  show, thinning
+Chain_parameters 1000000 10000 
+# Running mode: 1 - normal, 0 - set all likelihoods to 1 to recover the prior distributions.
+Running_mode 1 
+# Age Min and Max for model parametrisation
+Age_bounds -1250 -450
+# Parameters that describe the various model perturbations:
+# sigma_move, sigma_change, sigma_birth, sigma_ages
+Sigmas 30 5 7 0
+# Fraction of ages to change in a proposal (i.e. 20 means that 1/20 of them will change)
+Num_age_changes 1
+#
+# --------
+# Prior information
+# --------
+#  Intensities: I_min, I_max in micro Tesla
+Intensity_prior 40 120 
+# Number of change points: K_min, K_max
+Num_change_points 0 150 
+#
+# --------
+# Outputs
+# --------
+# Directory for all outputs:
+Outputs_directory Outputs_Frag25_min_4_200M
+# Credible interval or any non-positive number for none.
+Credible 95
+# Number of bins for posterior marginals:
+Nbins 1000
+# Name and write frequency of model file. The line below causes the code to write every 100th model to "models.dat". Enter a frequency of -1 for no output. 
+output_model models.dat 100
+# Joint distribution output: if frequency is -1 then nothing is output; otherwise this defines the frequency
+output_joint_distribution_freq 1
+# -------------------------------------------------------
+# Additional (optional) information 
+# -------------------------------------------------------
+# These are not used in the RJMCMC inversion but only in the plotting routines to compare against.
+#
+# Plotting range of intensity
+Plotting_intensity_range 40 120

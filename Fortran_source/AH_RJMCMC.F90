@@ -139,7 +139,7 @@ READ(LINE_READ(d_age_col+1),*) delta_age(i)
 READ(LINE_READ(F_col+1),*) intensity(i)
 READ(LINE_READ(dF_col+1),*) delta_intensity(i)
 
-IF( type_col .GE. -1) READ(LINE_READ(like_col+1),*) like_type(i)
+IF( like_col .GE. -1) READ(LINE_READ(like_col+1),*) like_type(i)
 IF( type_col .GE. 0) READ(LINE_READ(type_col+1),*) data_type(i)
 IF( distribution_col .GE. 0) READ(LINE_READ(distribution_col+1),*) AGE_distribution(i)
 IF( strat_col .NE. -1) READ(LINE_READ(strat_col+1),*) stratification_read_line(i)

@@ -1,0 +1,21 @@
+python make_manuscript_figures.py
+python make_supplement.py
+pdflatex fig1.tex
+pdflatex fig2.tex
+pdflatex fig3.tex
+pdflatex fig4.tex
+pdflatex supplement_S2.tex
+pdflatex supplement_S3.tex
+pdfcrop fig1.pdf fig1_cropped.pdf
+pdfcrop fig2.pdf fig2_cropped.pdf
+pdfcrop fig3.pdf fig3_cropped.pdf
+pdfcrop fig4.pdf fig4_cropped.pdf
+pdfcrop supplement_S3.pdf supplement_S3_cropped.pdf
+pdfcrop supplement_S2.pdf supplement_S2_cropped.pdf
+sips -s format png fig1_cropped.pdf --out fig1_cropped.png
+sips -s format png fig2_cropped.pdf --out fig2_cropped.png
+sips -s format png fig3_cropped.pdf --out fig3_cropped.png
+sips -s format png fig4_cropped.pdf --out fig4_cropped.png
+sips -s format png supplement_S2_cropped.pdf --out supplement_S2_cropped.png
+sips -s format png supplement_S3_cropped.pdf --out supplement_S3_cropped.png
+

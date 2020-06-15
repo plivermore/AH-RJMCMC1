@@ -19,6 +19,12 @@ Includes: capability to invert also for a rescaled standard deviation of the int
 **Version 4: revised Jan 17th 2020**
 Includes: an option for drawing from the prior age distributions when resampling the sample ages, and the ability to specify the number of age parameters to be resampled (rather than just a fraction of ages).
 
+**Version 5: revised June 15th 2020**
+Includes: an option for using a uniform distribution for the intensity, rather than normal distributions. Also now uses a different initial condition for the Markov chain, leading to small changes in the output compared to previous versions.
+
+Reproduces the outputs for the manuscript (in review): "Archeomagnetic intensity variations during the era of geomagnetic spikes in the Near East".
+
+
 Authors: 
 Phil Livermore (University of Leeds)
 Alex Fournier (Institut de Physique du Globe de Paris, Paris)
@@ -26,7 +32,7 @@ Thomas Bodin (Universite Lyon, Lyon)
 
 Maintained by Phil Livermore, Alex Fournier
 
-Last update: July Jan 17th 2020
+Last update: June 15th 2020
 
 ## Overview
 
@@ -48,11 +54,11 @@ By default the Intel Fortran compiler ifort is used, but it is straightforward t
 The code reads from an inputfile, which defines among other things, all the MCMC parameters, the directory where the outputs are to be written, and the location of the data file.
 To run the Fortran code using a single inputfile, type
 
-`AH inputfile`
+`AH Applications/AH-RJMCMC/inputfiles/inputfile`
 
 For example,
 
-`AH input_Paris700`
+`AH Applications/AH-RJMCMC/inputfiles/input_Paris700`
 
 runs the AH-RJMCMC code using the Paris700 dataset.
 
@@ -110,36 +116,38 @@ There are multiple input files in the Github directory that you can use as templ
 
 ### Data_file: The relative path of the dataset to be read in 
 
-### File_format (8 integer numbers) - These specify which columns of the data file should be read, in the order:  ID, age, delta age, intensity, delta intensity, data type, age distribution, stratification.
+### File_format (9 integer numbers): These specify which columns of the data file should be read, in the order below.  
 
-A data file may, for example, contain much more information than is required here and so only a subset of the columns need to be read.
+* ID : the column number of the sample ID (assumed to be text)
 
-ID : the column number of the sample ID (assumed to be text)
+* Age: the column number of the mean sample age
 
-Age: the column number of the mean sample age
+* delta age: the column number for the age uncertainty; interpreted as the half-interval range for a uniformly distributed age or the standard deviation for a normally distributed age
 
-delta age: the column number for the age uncertainty; interpreted as the half-interval range for a uniformly distributed age or the standard deviation for a normally distributed age
+* intensity: the column number of the mean sample intensity
 
-intensity: the column number of the mean sample intensity
+* delta intensity: the column number of the standard deviation of the intensity
 
-delta intensity: the column number of the standard deviation of the intensity
-
-data type: the column number specifying the data type, or -1 if this not relevant. 
+* data type: the column number specifying the data type, or -1 if this not relevant. 
 If -1 is specified, the data type is set internally within the code to 'O'(ther), which is never accessed.
 In the data file, the choices of type are: P, B, C, S: pottery, brick, baked clay, slag.
 
-age distribution: the column number specifying the age distribution flag or 
+* age distribution: the column number specifying the age distribution flag or 
 -1 if ALL the data ages are distributed uniformly (with centre point given by the age, and half-width given by the delta age)
 -2 if ALL the data ages are distributed normally (with mean given by the age, and standard deviation given by delta age)
 
-stratification: the column number specifying stratification information or 
+* stratification: the column number specifying stratification information or 
 -1 if stratification is to be ignored. 
 See the section below about denoting stratification within the data file.
+
+* intensity likelihood: the column number specifying the intensity likelihood type or
+-1 if all sample likelihoods normally distributed (this is the usual case).
+If set determined by the data file, the likelihood should be defined as "N" or "U" in the corresponding row, for normal or uniform distribution respectively. The intensity error is taken to be, respectively, the standard deviation or the half interval in intensity.
 
 In all the above, the column index begins at 0.
 
 A typical structure of File\_format is:
-File_format 0 2 3 4 5 -1 -1 -1  
+File_format 0 2 3 4 5 -1 -1 -1 -1
 
 ### Burn_in: The number of samples for the burn-in period
 

@@ -1,0 +1,41 @@
+% Use only LaTeX2e, calling the article.cls class and 12-point type.
+
+% split fig 1 into 2: obs, and syn + residual
+%remark that SV to degree 16 has 16*18 dof. Thus with 2m+1 > 16 * 18 the residual is exactly 0.
+\documentclass[12pt]{article}
+
+\usepackage{graphicx}
+\topmargin 0.0cm
+\oddsidemargin 0.2cm
+\textwidth 16cm 
+\textheight 21cm
+\footskip 1.0cm
+\pagestyle{empty}
+
+\begin{document} 
+
+\begin{figure}
+\begin{minipage}{8.2cm} 
+\hspace{0.2cm}
+\includegraphics[width=8cm]{legend.pdf}
+\end{minipage}
+\vspace{0.1cm}
+\vfill
+\begin{minipage}{8cm} 
+\includegraphics[width=8cm]{Mixed_Plot.pdf}
+\end{minipage}
+\vfill
+\begin{minipage}{8cm} 
+\includegraphics[width=8cm]{Fragment_Plot.pdf}
+\end{minipage}
+\vfill
+\begin{minipage}{8cm} 
+\includegraphics[width=8cm]{Group-N2_Plot.pdf}
+\end{minipage}
+\vfill
+\begin{minipage}{9cm} 
+\includegraphics[width=8cm]{Group-N3_Plot.pdf}
+\end{minipage}
+\end{figure}
+
+\end{document}

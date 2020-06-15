@@ -2,7 +2,7 @@
 # Input file 
 # --------
 # Data_file 
-Data_file archeomagnetic_data/Hawaii.txt
+Data_file archeomagnetic_data/Lubeck_Paris700.txt 
 #
 # Column indices for data file, in the order: ID, age, delta age, intensity, delta intensity, data type, age distribution, stratification
 # where column 0 is the first, column 1 is the second etc.
@@ -15,10 +15,11 @@ Data_file archeomagnetic_data/Hawaii.txt
 #
 # Stratification: the column containing stratification information (in the column data: 0 is unstratified, non zero indicates stratification).
 # To ignore stratification, set the stratification parameter to -1
-File_format 0 2 3 4 5 -1 -2 -1
+#
+File_format 0 2 3 4 5 -1 -1 6 -1
 # RJMCMC parameters
 Burn_in 50000
-Nsamples  5050000
+Nsamples  4050000
 # Discretistion size of the model
 model_discretisation 200
 # Chain-forming parameters:  show, thinning
@@ -26,10 +27,10 @@ Chain_parameters 10000 100
 # Running mode: 1 - normal, 0 - set all likelihoods to 1 to recover the prior distributions.
 running_mode 1 
 # Age Min and Max for model parametrisation
-Age_bounds -3200  2300  
+Age_bounds 825 2100
 # Parameters that describe the various model perturbations:
 # sigma_move, sigma_change, sigma_birth, sigma_age
-Sigmas 200 20 8 5
+Sigmas 50 15 30 5
 # Fraction of ages to change in a proposal (i.e. 20 means that 1/20 of them will change)
 Age_frac 30.0
 #
@@ -37,26 +38,27 @@ Age_frac 30.0
 # Prior information
 # --------
 #  Intensities: I_min, I_max in micro Tesla
-Intensity_prior 10 100 
+Intensity_prior 30 100 
 # Number of change points: K_min, K_max
-Num_change_points 1 100
+Num_change_points 1 50 
 #
 # --------
 # Outputs
 # --------
 # Directory for all outputs:
-Outputs_directory Outputs_Hawaii
+Outputs_directory Outputs_Lubeck_Paris700
 # Credible interval or any non-positive number for none.
 Credible 95
 # Number of bins for posterior marginals:
 Nbins 200
 # Name and write frequency of model file. The line below causes the code to write every 100th model to "models.dat". Enter a frequency of -1 for no output. 
-output_model models.dat 50
+output_model models.dat 100
 # Joint distribution output: if frequency is -1 then nothing is output; otherwise this defines the frequency
-output_joint_distribution_freq 5
+output_joint_distribution_freq 1
 # -------------------------------------------------------
-# Additional (optional) information
+# Additional (optional) information 
 # -------------------------------------------------------
+# These are not used in the RJMCMC inversion but only in the plotting routines to compare against.
 #
 # Plotting range of intensity
-Plotting_intensity_range 10 100
+Plotting_intensity_range 35 75
