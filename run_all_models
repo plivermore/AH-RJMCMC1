@@ -1,0 +1,5 @@
+nohup ./AH input_Frag_200M > screen_output_Frag_200M &
+nohup ./AH input_Group-N2_200M > screen_output_Group-N2_200M &
+nohup ./AH input_Group-N3_200M > screen_output_Group-N3_200M &
+nohup ./AH input_Mixed_200M > screen_output_Mixed_200M &
+

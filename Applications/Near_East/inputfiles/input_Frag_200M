@@ -16,7 +16,7 @@ data_file archeomagnetic_data/Fragment_T_spikes.txt
 # Stratification: the column containing stratification information (in the column data: 0 is unstratified, non zero indicates stratification). 
 # To ignore stratification, set the stratification parameter to -1
 #
-File_format 0 2 3 4 5 1 -1 8
+File_format 0 2 3 4 5 1 -1 8 -1
 # RJMCMC parameters
 Burn_in 50000
 Nsamples  200050000

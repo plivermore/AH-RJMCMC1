@@ -1,0 +1,17 @@
+nohup ./AH input_Frag_200M > screen_output_Frag_200M &
+nohup ./AH input_Frag_min_3_200M > screen_output_Frag_min_3_200M &
+nohup ./AH input_Frag_min_4_200M > screen_output_Frag_min_4_200M &
+nohup ./AH input_Frag_min_5_200M > screen_output_Frag_min_5_200M &
+nohup ./AH input_Frag_min_6_200M > screen_output_Frag_min_6_200M &
+nohup ./AH input_Frag_25_200M > screen_output_Frag_25_200M &
+nohup ./AH input_Frag_25_min_3_200M > screen_output_Frag_25_min_3_200M &
+nohup ./AH input_Frag_25_min_4_200M > screen_output_Frag_25_min_4_200M &
+nohup ./AH input_Frag_25_min_5_200M > screen_output_Frag_25_min_5_200M &
+nohup ./AH input_Frag_25_min_6_200M > screen_output_Frag_25_min_6_200M &
+nohup ./AH input_Frag_50_200M > screen_output_Frag_50_200M &
+nohup ./AH input_Frag_50_min_3_200M > screen_output_Frag_50_min_3_200M &
+nohup ./AH input_Frag_50_min_4_200M > screen_output_Frag_50_min_4_200M &
+nohup ./AH input_Frag_50_min_5_200M > screen_output_Frag_50_min_5_200M &
+nohup ./AH input_Frag_50_min_6_200M > screen_output_Frag_50_min_6_200M &
+nohup ./AH input_Frag_extended_errors_Gaussian_200M > screen_output_Frag_extended_errors_Gaussian_200M &
+nohup ./AH input_Frag_extended_errors_uniform_200M >  screen_output_Frag_extended_errors_uniform_200M &
