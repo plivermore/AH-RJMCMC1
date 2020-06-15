@@ -1,4 +1,3 @@
-nohup ../...AH inputfiles/input_Frag_200M > screen_output_Frag_200M &
 nohup ../../AH inputfiles/input_Frag_min_3_200M > screen_output_Frag_min_3_200M &
 nohup ../../AH inputfiles/input_Frag_min_4_200M > screen_output_Frag_min_4_200M &
 nohup ../../AH inputfiles/input_Frag_min_5_200M > screen_output_Frag_min_5_200M &
