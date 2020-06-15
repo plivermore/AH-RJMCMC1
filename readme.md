@@ -20,8 +20,7 @@ Includes: capability to invert also for a rescaled standard deviation of the int
 Includes: an option for drawing from the prior age distributions when resampling the sample ages, and the ability to specify the number of age parameters to be resampled (rather than just a fraction of ages).
 
 **Version 5: revised June 15th 2020**
-Includes: an option for using a uniform distribution for the intensity, rather than normal distributions. Also now uses a different initial condition for the Markov chain, leading to small changes in the output compared to previous versions.
-
+Includes: an option for using a uniform distribution for the intensity, rather than normal distributions. 
 Reproduces the outputs for the manuscript (in review): "Archeomagnetic intensity variations during the era of geomagnetic spikes in the Near East".
 
 
