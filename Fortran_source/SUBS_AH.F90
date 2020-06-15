@@ -152,8 +152,8 @@ DO i=1,NUM_DATA
 WRITE(FILENAME,'(A,A,I4.4,A)') TRIM(Outputs_directory),'/Joint_distribution_data/Sample_',i,'.dat'
 OPEN(30+i, FILE = FILENAME, STATUS = 'REPLACE', FORM = 'FORMATTED', IOSTAT = IOS)
 IF( IOS .NE. 0) THEN
-PRINT*, 'CANNOT OPEN FILES FOR WRITING JOINT_DISTRIBUTION DATA'
-PRINT*,' FAILED ON FILENAME ', TRIM(FILENAME)
+write(error_unit, fmt='(a)') 'CANNOT OPEN FILES FOR WRITING JOINT_DISTRIBUTION DATA'
+write(error_unit, fmt='(a,a)') ' FAILED ON FILENAME ', TRIM(FILENAME)
 STOP
 ENDIF
 ENDDO
@@ -161,8 +161,8 @@ ENDDO
 WRITE(FILENAME,'(A,A)') TRIM(Outputs_directory),'/Joint_distribution_data/sd_factor.dat'
 OPEN(30+NUM_DATA+1, FILE = FILENAME, STATUS = 'REPLACE', FORM = 'FORMATTED', IOSTAT = IOS)
 IF( IOS .NE. 0) THEN
-PRINT*, 'CANNOT OPEN FILES FOR WRITING JOINT_DISTRIBUTION DATA'
-PRINT*,' FAILED ON FILENAME ', TRIM(FILENAME)
+write(error_unit, fmt='(a)')  'CANNOT OPEN FILES FOR WRITING JOINT_DISTRIBUTION DATA'
+write(error_unit, fmt='(a,a)') ' FAILED ON FILENAME ', TRIM(FILENAME)
 STOP
 ENDIF
 
@@ -212,12 +212,12 @@ RETURN_INFO%n_changepoint_hist(:) = 0
 discrete_history(:,:) = 0
 
 IF(MINVAL( I_SD(1:NUM_DATA)) .eq. 0.0_8) THEN
-PRINT*,'MIN INTENSITY ERROR IS 0, INCOMPATITBLE WITH ASSUMPTIONS BUILT INTO CODE'
+write(error_unit, fmt='(a)') 'MIN INTENSITY ERROR IS 0, INCOMPATITBLE WITH ASSUMPTIONS BUILT INTO CODE'
 STOP
 ENDIF
 
 IF(MINVAL( DELTA_AGE(1:NUM_DATA)) .eq. 0.0_8) THEN
-PRINT*,'MIN AGE ERROR IS 0, INCOMPATITBLE WITH ASSUMPTIONS BUILT INTO CODE'
+write(error_unit, fmt='(a)') 'MIN AGE ERROR IS 0, INCOMPATITBLE WITH ASSUMPTIONS BUILT INTO CODE'
 STOP
 ENDIF
 
@@ -415,8 +415,8 @@ pt_prop(k+1,1)=D_min+RAND(1)*(D_max-D_min)
 
 ! check that all the time-points are different:
 DO WHILE ( CHECK_DIFFERENT(X_MIN, X_MAX, pt_prop(1:k+1,1)) .EQ. 1)
-WRITE(101,*) 'Birth has resulted in two vertices of exactly the same age', pt_prop(1:k+1,1)
-WRITE(101, *) 'Randomly generating a new age'
+write(error_unit, fmt='(a)') 'Birth has resulted in two vertices of exactly the same age'! , pt_prop(1:k+1,1)
+write(error_unit, fmt='(a)') 'Randomly generating a new age'
 CALL RANDOM_NUMBER( RAND(1))
 pt_prop(k+1,1)=D_min+RAND(1)*(D_max-D_min)
 END DO
@@ -497,8 +497,8 @@ if ( (pt_prop(ind,1) > D_max) .OR. (pt_prop(ind,1) < D_min) )  out = 0
 
 !! check that all the time-points are different:
 DO WHILE ( CHECK_DIFFERENT( X_MIN, X_MAX, pt_prop(1:k,1)) .EQ. 1)
-WRITE(101,*) 'MOVE position has resulted in two vertices of exactly the same age', pt_prop(1:k+1,1)
-WRITE(101, *) 'Randomly generating a new age'
+write(error_unit, fmt='(a)')  'MOVE position has resulted in two vertices of exactly the same age'!, pt_prop(1:k+1,1)
+write(error_unit, fmt='(a)') 'Randomly generating a new age'
 pt_prop(ind,1) = pt(ind,1)+randn()*sigma_move
 END DO
 
@@ -678,7 +678,7 @@ AA = AA + 1
 elseif (change_sd_factor .eq. 1) then
 A_sd = A_sd + 1
 else
-PRINT*, 'FATAL ERROR 1'; stop
+write(error_unit, fmt='(a)')  'FATAL ERROR 1'; stop
 endif
 endif !if (s>burn_in)
 endif
@@ -892,7 +892,7 @@ enddo
 
 ! Calculate the "best" solution
 IF( k_best < 0) THEN
-PRINT*, 'NO MINIMUM LIKELIHOOD SOLUTION FOUND'
+write(error_unit, fmt='(a)') 'NO MINIMUM LIKELIHOOD SOLUTION FOUND'
 RETURN_INFO%best(1:discretise_size) = 0.0_8
 else
 CALL Find_linear_interpolated_values(k_best, x_min, x_max, pt_best, endpt_best, discretise_size, x, RETURN_INFO%best(1:discretise_size) )
