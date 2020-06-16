@@ -19,7 +19,7 @@ Includes: capability to invert also for a rescaled standard deviation of the int
 **Version 4: revised Jan 17th 2020**
 Includes: an option for drawing from the prior age distributions when resampling the sample ages, and the ability to specify the number of age parameters to be resampled (rather than just a fraction of ages).
 
-**Version 5: revised June 15th 2020**
+**Version 5: revised June 16th 2020**
 Includes: an option for using a uniform distribution for the intensity, rather than normal distributions. 
 Reproduces the outputs for the manuscript (in review): "Archeomagnetic intensity variations during the era of geomagnetic spikes in the Near East".
 
@@ -31,7 +31,7 @@ Thomas Bodin (Universite Lyon, Lyon)
 
 Maintained by Phil Livermore, Alex Fournier
 
-Last update: June 15th 2020
+Last update: June 16th 2020
 
 ## Overview
 
@@ -69,12 +69,17 @@ From the manuscript https://academic.oup.com/gji/article/215/3/2008/5101441
 * Hawaii
 * Lubeck-Paris700
 
-Additionally:
+Additionally
+
+* Paris-700, rescaled intensity error budget 
+
+
+For the Near East study:
 
 * Near East, Mixed type
-* Near East, Group Level
-* Paris-700, rescaled intensity error budget 
- `input_sigma_uncertain_Paris700`
+* Near East, Group Level, N=2,3
+* Near East, Fragment level (original dataset, with modified variants)
+
 
 ## Making figures
 
