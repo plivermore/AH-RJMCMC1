@@ -46,7 +46,7 @@ Num_change_points 0 150
 # Outputs
 # --------
 # Directory for all outputs:
-Outputs_directory  Outputs_Frag_extended_errors_uniform_200M
+Outputs_directory Outputs_Frag_extended_errors_uniform_200M
 # Credible interval or any non-positive number for none.
 Credible 95
 # Number of bins for posterior marginals:
