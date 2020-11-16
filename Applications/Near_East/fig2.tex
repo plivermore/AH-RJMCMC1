@@ -3,18 +3,37 @@
 % split fig 1 into 2: obs, and syn + residual
 %remark that SV to degree 16 has 16*18 dof. Thus with 2m+1 > 16 * 18 the residual is exactly 0.
 \documentclass[12pt]{article}
-
+\usepackage{amssymb}
+\usepackage{relsize}
 \usepackage{graphicx}
+\usepackage{color}
 \topmargin 0.0cm
 \oddsidemargin 0.2cm
 \textwidth 16cm 
 \textheight 21cm
 \footskip 1.0cm
 \pagestyle{empty}
-
+\usepackage[usenames,dvipsnames]{xcolor}
+\definecolor{orange(ryb)}{rgb}{1.0, 0.6470588235294118, 0.00}
+\definecolor{green(ryb)}{rgb}{0.0, 0.5019607843137255, 0.00}
+\definecolor{magenta(ryb)}{rgb}{1.0, 0.0, 1.0}
 \begin{document} 
 
 \begin{figure}
+%
+% -1049.  -974.  -937.  -889.  -786.  -670.
+% 'red','orange','green','blue','magenta', 'black'
+
+\begin{minipage}{8cm} 
+\centering
+\renewcommand{\arraystretch}{0.7}
+    \begin{tabular}{lll}
+ {\color{red} \raisebox{1pt}{ \scalebox{0.5}{$ \bigstar$} } {\tiny 1050 BC } } & {\color{green(ryb)} \raisebox{1pt}{ \scalebox{0.5}{$ \bigstar$} } {\tiny 940 BC } } &  {\color{magenta} \raisebox{1pt}{ \scalebox{0.5}{$ \bigstar$} } {\tiny 790 BC } } \\
+{\color{orange(ryb)} \raisebox{1pt}{ \scalebox{0.5}{$ \bigstar$} } {\tiny 970 BC } } & {\color{blue} \raisebox{1pt}{ \scalebox{0.5}{$ \bigstar$} } {\tiny 890 BC } } & {\color{black} \raisebox{1pt}{ \scalebox{0.5}{$ \bigstar$} } {\tiny 670 BC } }\\
+    \end{tabular}
+\end{minipage}
+\vfill
+%
 \begin{minipage}{8cm} 
 \includegraphics[width=8cm]{Fig2_0.pdf}
 \end{minipage}
