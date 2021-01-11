@@ -263,16 +263,17 @@ CALL RANDOM_NUMBER( RAND(1:2))
 pt(i,1)=D_min+rand(1) * (D_max-D_min)  ! position of internal vertex
 pt(i,2)=I_min+rand(2) * (I_max-I_min)  ! magnitude of vertices
 enddo
-ELSE  ! If some data have a uniform distribution in intensity, we need to create a special initial condition that pretty much fits the data.
+ELSE  ! If some data have a uniform distribution in intensity, we need to create a special initial condition that essentially joins together all the samples or it won't be a plausible initial condition
 PRINT*,'USING AN INITIAL MODEL RANDOM CONDITION CLOSE TO ALL THE DATA'
 k_init = NUM_DATA
 k = k_init
-
+! Adjust ages in order that no two are the same, or the linear interpolation will fail. Here, this is achieved by adding a small number. 
 DO i=1,NUM_DATA
 CALL RANDOM_NUMBER (RAND(1:2))
-AGE(i) = AGE(i)+0.5*(rand(1)-1) * DELTA_AGE(i) ! ages
-pt(i,1)= AGE(i)
-pt(i,2)=intensity(i)+0.5*(rand(2)-1) * I_sd(i) ! magnitude of vertices
+IF( STRATIFICATION_AGE_DIRECTION == AGE_ASCENDING) AGE(I) = AGE(I) + 0.01_8 * i 
+IF( STRATIFICATION_AGE_DIRECTION == AGE_DESCENDING) AGE(I) = AGE(I) - 0.01_8 * i 
+pt(i,1)= AGE(i) ! position 
+pt(i,2)=MAX(MIN(intensity(i)+0.5*(rand(2)-1) * I_sd(i),I_MAX), I_MIN) ! magnitude of vertices
 ENDDO
 
 ENDIF
@@ -282,6 +283,14 @@ CALL RANDOM_NUMBER (RAND(1:2))
 endpt(1) = I_min+RAND(1) * (I_max-I_min)
 endpt(2) = I_min+RAND(2) * (I_max-I_min)
 
+
+! Check to ensure that the stratification constraints (if any) are satisifed
+IF( .NOT. CHECK_STRATIFICATION(AGE, STRATIFIED, STRATIFICATION_INDEX, &
+STRATIFICATION_AGE_DIRECTION, NUM_DATA) ) THEN
+write(error_unit,fmt=*) 'INITIAL CONDITION IS NOT CONSISTENT WITH GIVEN &
+STRATIFICATION CONSTRAINTS'
+STOP
+ENDIF
 
 ! make sure the positions are sorted in ascending order.
 ALLOCATE( ORDER(1:k_init), pts_new(1:k_init,1:2) )
@@ -338,6 +347,7 @@ like_init=like
 Print*, 'Initial likelihood is ', like
 sd_factor_prop = 1.0_8
 sd_factor = 1.0_8
+
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 !%%%%%%%%%%%%%%%%% START RJ-MCMC SAMPLING %%%%%%%%%%%%%%%%%
@@ -607,7 +617,6 @@ change_age = 1  !the acceptance probability is the same for MOVE
 ENDDO
 
 IF( .NOT. CHECK_STRATIFICATION(AGE_PROP, STRATIFIED, STRATIFICATION_INDEX, STRATIFICATION_AGE_DIRECTION,  NUM_DATA) ) out = 0
-
 ENDIF
 ENDIF ! decide on what proposal to make
 !----------------------------------------------------------------------
