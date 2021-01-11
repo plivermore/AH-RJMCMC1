@@ -2,7 +2,7 @@
 # Input file 
 # --------
 # Data_file 
-data_file archeomagnetic_data/Group-N2_T_spikes.txt
+data_file archeomagnetic_data/Group-N2_T0_spikes.txt
 #
 # Column indices for data file, in the order: ID, age, delta age, intensity, delta intensity, data type, age distribution, stratification
 # where column 0 is the first, column 1 is the second etc.

@@ -2,7 +2,7 @@
 # Input file 
 # --------
 # Data_file 
-data_file archeomagnetic_data/Fragment_T_min_6_spikes.txt
+data_file archeomagnetic_data/Fragment_T0_min_6_spikes.txt
 #
 # Column indices for data file, in the order: ID, age, delta age, intensity, delta intensity, data type, age distribution, stratification, likelihood type
 # where column 0 is the first, column 1 is the second etc.
