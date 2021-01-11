@@ -1,7 +1,3 @@
-% Use only LaTeX2e, calling the article.cls class and 12-point type.
-
-% split fig 1 into 2: obs, and syn + residual
-%remark that SV to degree 16 has 16*18 dof. Thus with 2m+1 > 16 * 18 the residual is exactly 0.
 \documentclass[12pt]{article}
 
 \usepackage{graphicx}
@@ -15,40 +11,31 @@
 \begin{document} 
 
 \begin{figure}
-\begin{minipage}{8.5cm}
-\begin{minipage}{0.5cm}
-(a) \vspace{4.5cm}
+\begin{minipage}{8cm}
+\includegraphics[width=8cm]{Fig4_0.pdf}
 \end{minipage}
+\hfill
+\begin{minipage}{9cm}
+\hspace{0.2cm}
 \hfill
 \begin{minipage}{8cm}
-\includegraphics[height=5cm]{Fig4_0.pdf}
+\includegraphics[width=8cm]{Fig4_1.pdf}
 \end{minipage}
-%
-\vspace{0.8cm}
+\end{minipage}
 \vfill
-%
-\begin{minipage}{0.5cm}
-(b)  \vspace{4.5cm} 
-\end{minipage}
-\hfill
-%
 \begin{minipage}{8cm} 
-\includegraphics[height=5cm]{Fig4_1.pdf}
-\end{minipage}
-\end{minipage} %8.4
-%
-\hfill
-\hspace{0.15cm} 
-\begin{minipage}{8.5cm} 
-\begin{minipage}{0.5cm}
-(c)  \vspace{10.6cm}
+\includegraphics[width=8cm]{Fig4_2.pdf}
 \end{minipage}
 \hfill
-%
+\begin{minipage}{9cm} 
+\hspace{0.2cm}
+\hfill
 \begin{minipage}{8cm} 
-\includegraphics[height=11.2cm]{Fig4_2.pdf}
+\includegraphics[width=8cm]{Fig4_3.pdf}
 \end{minipage}
 \end{minipage}
+%
 \end{figure}
 
 \end{document}
+

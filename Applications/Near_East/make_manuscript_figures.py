@@ -44,11 +44,16 @@ for line in open('Outputs_Mixed_200M/input_file','r'):
 # spikes definitions:
 spikes_colour = ['red','orange','green','blue','magenta', 'black']
 duration_dFdt_threshold = 0.12
-dFdt_threshold = 0.60  # 5 x 0.12, and close to 0.62
+dFdt_threshold = 0.6  # 5 x 0.12, and close to 0.62
 intensity_threshold = 5
 window_size = 5
 from spike_detector import find_spikes
 
+from matplotlib import colors
+#print( colors.to_rgba('red') )
+print('RGB of spike colours:')
+for i in spikes_colour:
+    print( colors.to_rgba(i) )
 
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter, AutoMinorLocator,MaxNLocator)
 print('Building fig 1...')
@@ -81,7 +86,8 @@ err_colors = ["royalblue", "royalblue","green", "royalblue","royalblue","red","r
 fmts = ["o","s", "o","^","X","o","^","o","s","^"]
 labels=["Israel, Tel Hazor","Israel, Tel Megiddo","Jordan, Khirbat en-Nahas","Israel, Timna-30","Israel, Judean jar handles","Syria, Qatna","Syria, other data","Turkey, Arslantepe","Turkey, Kilise Tepe","Turkey, Tell Tayinat"]
 
-age_SHA, int_SHA, int_err_SHA = np.loadtxt('PSVC_SHA.DIF.14k.dat',unpack=True,usecols=(0,5,6))
+age_SHA, int_SHA, int_err_SHA = np.loadtxt('SHAWQ_IronAge_Palmyra.dat',unpack=True,usecols=(0,1,2),skiprows=1)
+int_err_SHA = int_err_SHA * 2  #convert to 2 s.d.
 
 for j in range(0,4):
     anom, atype, age, dt, Int, sd, vadm, sdvadm, val = np.loadtxt(files[j]+".txt",unpack=True)
@@ -139,12 +145,12 @@ for j in range(0,4):
     secay.minorticks_on()
 
     if j ==0: # plot SCHA_DIF
-        ax0.fill_between(-age_SHA, int_SHA-int_err_SHA, int_SHA+int_err_SHA, facecolor='plum', alpha=0.2, edgecolor='blue')
-        ax0.plot(-age_SHA, int_SHA, 'navy',lw=1)
-        ax0.plot(-age_SHA, int_SHA-int_err_SHA,'b--',linewidth=0.5)
-        ax0.plot(-age_SHA, int_SHA+int_err_SHA,'b--',linewidth=0.5)
+        ax0.fill_between(-age_SHA, int_SHA-int_err_SHA, int_SHA+int_err_SHA, facecolor='lightgreen', alpha=0.2, edgecolor='green')
+        ax0.plot(-age_SHA, int_SHA, 'darkgreen',lw=1)
+        ax0.plot(-age_SHA, int_SHA-int_err_SHA,'g--',linewidth=0.5)
+        ax0.plot(-age_SHA, int_SHA+int_err_SHA,'g--',linewidth=0.5)
 
-    plt.title(titles[j], position=(0.03, 0.85),fontsize=16,loc='left',bbox=dict(facecolor=(1,1,1,1),edgecolor=(0,0,0,1)))
+    plt.title(titles[j], x=0.03, y = 0.85,fontsize=16,loc='left',bbox=dict(facecolor=(1,1,1,1),edgecolor=(0,0,0,1)))
     plt.text(0.82,0.09,r'$N_{data}$=%i'%len(age),fontsize=16,verticalalignment='center',transform=ax0.transAxes)
     plt.savefig(files[j]+'.pdf', bbox_inches='tight',pad_inches=0.0)
 
@@ -215,13 +221,47 @@ for i in range(0,8):
     plt.subplots_adjust(hspace=0.1, wspace=0)
     draw_composite( dirs[i], files[1], titles[i], ax1, ax2, credible, 16, plot_posterior_age_intensity=True, plot_spikes_times = True)
     
-
+    if i==6 or i==4:
+        ax1.fill_between(-age_SHA, int_SHA-int_err_SHA, int_SHA+int_err_SHA, facecolor='lightgreen', alpha=0.2, edgecolor='green')
+        ax1.plot(-age_SHA, int_SHA, 'darkgreen',lw=1)
+        ax1.plot(-age_SHA, int_SHA-int_err_SHA,'g--',linewidth=0.5)
+        ax1.plot(-age_SHA, int_SHA+int_err_SHA,'g--',linewidth=0.5)
+    
     ax2.set_xlabel('Age (BC)',fontsize=14)
         
     plt.savefig('Fig3_'+str(i)+'.pdf', bbox_inches='tight',pad_inches=0.0)
     plt.close()
 
 print('Building fig 4...')
+
+dirs = [dir_base+'Outputs_Frag_no_Timna_age_model_Gaussian_200M/',dir_base+'Outputs_Frag_no_Timna_age_model_Gaussian_min_3_200M/',dir_base+'Outputs_Frag_no_Timna_age_model_Gaussian_min_5_200M/',dir_base+'Outputs_Frag_Extended_errors_uniform_no_Timna_age_model_Gaussian_200M/']
+titles=[r"(a) Timna-30 ages Gaussian prior", r"(b) Timna-30 ages Gaussian prior, minimum intensity error 3 $\mu T$", r"(c) Timna-30 ages Gaussian prior, minimum intensity error 5 $\mu T$",r"(d) Timna-30 ages Gaussian prior, extended intensity errors"]
+
+Number_rows = 5
+row_span_main_figure =3
+
+for i in range(0,len(titles)):
+    fig2 = plt.subplots(figsize=(10,5))
+    ax1 = plt.subplot2grid((Number_rows, 1), (0,0), colspan=1,rowspan=row_span_main_figure)
+    ax2 = plt.subplot2grid((Number_rows, 1), (row_span_main_figure,0), colspan=1,rowspan=Number_rows-row_span_main_figure)
+    plt.subplots_adjust(hspace=0.1, wspace=0)
+    draw_composite( dirs[i], files[1], titles[i], ax1, ax2, credible, 16, plot_posterior_age_intensity=True, plot_spikes_times = True)
+    
+    if 1==1:
+        ax1.fill_between(-age_SHA, int_SHA-int_err_SHA, int_SHA+int_err_SHA, facecolor='lightgreen', alpha=0.2, edgecolor='green')
+        ax1.plot(-age_SHA, int_SHA, 'darkgreen',lw=1)
+        ax1.plot(-age_SHA, int_SHA-int_err_SHA,'g--',linewidth=0.5)
+        ax1.plot(-age_SHA, int_SHA+int_err_SHA,'g--',linewidth=0.5)
+
+    ax2.set_xlabel('Age (BC)',fontsize=14)
+
+plt.savefig('Fig4_'+str(i)+'.pdf', bbox_inches='tight',pad_inches=0.0)
+plt.close()
+
+
+
+
+print('Building fig 5...')
 
 
 fig2,ax2 = plt.subplots(figsize=(6,4))
@@ -252,7 +292,7 @@ ax2.spines['top'].set_visible(False)
 ax2.spines['right'].set_visible(False)
 ax2.bar(-60,20,width=1,bottom = 0,color='k')
 ax2.text(-60,20,r"$20~\mu$T",rotation='vertical',horizontalalignment='right',          verticalalignment='top',fontfamily="serif",fontsize=14)
-fig2.savefig('Fig4_0.pdf', bbox_inches='tight',pad_inches=0.0)
+fig2.savefig('Fig5_0.pdf', bbox_inches='tight',pad_inches=0.0)
 plt.close()
 
 
@@ -294,7 +334,7 @@ ax2.xaxis.set_tick_params(labelsize=16)
 ax2.yaxis.set_tick_params(labelsize=16)
 
 
-fig2.savefig('Fig4_1.pdf', bbox_inches='tight',pad_inches=0.0)
+fig2.savefig('Fig5_1.pdf', bbox_inches='tight',pad_inches=0.0)
 plt.close()
 
 
@@ -330,4 +370,4 @@ for i in range(0,number_cases):
         ax2.plot(i+offset,spikes_max,'*',markersize=8,color=spikes_colour[myspike])
 #print(i,myspike, spikes_max)
 ax2.set_ylabel(r'Maximum $\vert dF/dt \vert$ during spike $(\mu T yr^{-1})$')
-fig2.savefig('Fig4_2.pdf', bbox_inches='tight',pad_inches=0.0)
+fig2.savefig('Fig5_2.pdf', bbox_inches='tight',pad_inches=0.0)

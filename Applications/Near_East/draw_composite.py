@@ -76,7 +76,7 @@ def draw_composite(directory, symbols_file, title, ax1, ax2, credible, labels_fo
     # Make x-tick labels invisible.
     ax1.xaxis.set_ticks([])
     
-    ax1.set_title(title, position=(0.01, 0.80),fontsize=14,loc='left',bbox=dict(facecolor=(1,1,1,1),edgecolor=(0,0,0,1)))
+    ax1.set_title(title, x=0.01, y = 0.80,fontsize=14,loc='left',bbox=dict(facecolor=(1,1,1,1),edgecolor=(0,0,0,1)))
     ax1.spines['bottom'].set_visible(False)
 
     # dF/dt:
@@ -93,7 +93,7 @@ def draw_composite(directory, symbols_file, title, ax1, ax2, credible, labels_fo
     ax2.set_ylim(-1,1)
     
     duration_dFdt_threshold = 0.12
-    dFdt_threshold = 0.60  # 5 x 0.12, and close to 0.62
+    dFdt_threshold = 0.6  # 5 x 0.12, and close to 0.62
     intensity_threshold = 5
     window_size = 5
     
