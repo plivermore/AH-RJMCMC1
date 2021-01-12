@@ -247,16 +247,15 @@ for i in range(0,len(titles)):
     plt.subplots_adjust(hspace=0.1, wspace=0)
     draw_composite( dirs[i], files[1], titles[i], ax1, ax2, credible, 16, plot_posterior_age_intensity=True, plot_spikes_times = True)
     
-    if 1==1:
-        ax1.fill_between(-age_SHA, int_SHA-int_err_SHA, int_SHA+int_err_SHA, facecolor='lightgreen', alpha=0.2, edgecolor='green')
-        ax1.plot(-age_SHA, int_SHA, 'darkgreen',lw=1)
-        ax1.plot(-age_SHA, int_SHA-int_err_SHA,'g--',linewidth=0.5)
-        ax1.plot(-age_SHA, int_SHA+int_err_SHA,'g--',linewidth=0.5)
+    ax1.fill_between(-age_SHA, int_SHA-int_err_SHA, int_SHA+int_err_SHA, facecolor='lightgreen', alpha=0.2, edgecolor='green')
+    ax1.plot(-age_SHA, int_SHA, 'darkgreen',lw=1)
+    ax1.plot(-age_SHA, int_SHA-int_err_SHA,'g--',linewidth=0.5)
+    ax1.plot(-age_SHA, int_SHA+int_err_SHA,'g--',linewidth=0.5)
 
     ax2.set_xlabel('Age (BC)',fontsize=14)
 
-plt.savefig('Fig4_'+str(i)+'.pdf', bbox_inches='tight',pad_inches=0.0)
-plt.close()
+    plt.savefig('Fig4_'+str(i)+'.pdf', bbox_inches='tight',pad_inches=0.0)
+    plt.close()
 
 
 
