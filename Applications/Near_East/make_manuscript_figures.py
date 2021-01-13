@@ -188,11 +188,9 @@ for i in range(0,3):
     plt.subplots_adjust(hspace=0.1, wspace=0)
     draw_composite( dirs[i], files[i+1], titles[i], ax1, ax2, credible, 14, plot_posterior_age_intensity=True, plot_spikes_times = True )
    
-    if i == 2:
-        ax2.set_xlabel('Age (BC)',fontsize=14)
-    else:
-        ax2.set_xticklabels([])
-
+   
+    ax2.set_xlabel('Age (BC)',fontsize=14)
+    
     if i == 0: #label the fragment plot with coloured stars
         median_x, median_y = np.loadtxt(dirs[0] +'median.dat', unpack=True)
         number_spikes_frag, start_age_frag, end_age_frag, peak_age_frag = find_spikes(median_x, median_y, window_size=window_size, intensity_threshold=intensity_threshold, dFdt_threshold=dFdt_threshold, duration_dFdt_threshold=duration_dFdt_threshold)
