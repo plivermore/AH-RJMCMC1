@@ -956,7 +956,7 @@ linear_description_intensity(k+2) = endpt(2)
 
 
 call interp_linear( 1, k+2, linear_description_time, linear_description_intensity, nd, &
-grid(1:nd), interpolated_signal )
+grid(:), interpolated_signal )
 
 return
 END SUBROUTINE Find_linear_interpolated_values
