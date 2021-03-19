@@ -1,0 +1,75 @@
+# --------
+# Input file 
+# --------
+# Data_file 
+Data_file ./test1.txt 
+#
+# Column indices for data file, in the order: ID, age, delta age, intensity, delta intensity, data type, age distribution, stratification, likelihood
+# where column 0 is the first, column 1 is the second etc.
+#
+# File_format (9 integer numbers): These specify which columns of the data file should be read, in the order below.
+# ID 1 : the column number of the sample ID (assumed to be text) 
+# Age 2 : the column number of the mean sample age
+# delta age 3 : the column number for the age uncertainty; interpreted as the half-interval range for a uniformly distributed age or the standard deviation for a normally distributed age
+# intensity 4 : the column number of the mean sample intensity
+# delta intensity 5 : the column number of the standard deviation of the intensity 
+# data type: -1 if not relevant; 'O'(ther); P, B, C, S: pottery, brick, baked clay, slag.
+# age distribution: -1: ALL the data ages are distributed uniformly (half-width given by the delta age) ; -2: ALL the data ages are distributed normally (with mean given by the age, and standard deviation given by delta age)
+# stratification: column number specifying stratification information or -1 if stratification is to be ignored
+# intensity likelihood -1 : the column number specifying the intensity likelihood; -1  if all sample likelihoods normally distributed (this is the usual case)
+
+# Data type:  If data type is not specified as column data, set this parameter to -1. All data will be assigned a type "O" (other).
+#
+# Age distribution of data: If age distribution is globally specified (and is not specified by column data):
+#  -1 is uniform (with centre point given by the read age, and half-width given by the read delta age)
+#  -2 is normal distribution (with mean given by the read age, and standard deviation given by delta age)
+#
+# Stratification: the column containing stratification information (in the column data: 0 is unstratified, non zero indicates stratification).
+# To ignore stratification, set the stratification parameter to -1
+#
+File_format 0 1 2 3 4 -1 -1 5 -1
+# RJMCMC parameters
+Burn_in 50000
+Nsamples   1050000 
+# Discretistion size of the model
+model_discretisation 200
+# Chain-forming parameters:  show, thinning
+Chain_parameters 10000 1000 
+# Running mode: 1 - normal, 0 - set all likelihoods to 1 to recover the prior distributions.
+running_mode 1 
+# Age Min and Max for model parametrisation
+Age_bounds -4 15
+# Parameters that describe the various model perturbations:
+# sigma_move (age), sigma_change (intensity), sigma_birth (intensity), sigma_age (standard deviation)
+Sigmas 0.1 0.1 0.1 0
+# Number of ages to change in a resample-age proposal
+Num_age_changes 1
+#
+# --------
+# Prior information
+# --------
+#  Intensities: I_min, I_max in micro Tesla
+Intensity_prior 2 20 
+# Number of change points: K_min, K_max
+Num_change_points 1 150 
+#
+# --------
+# Outputs
+# --------
+# Directory for all outputs:
+Outputs_directory output_test1
+# Credible interval or any non-positive number for none.
+Credible 95
+# Number of bins for posterior marginals:
+Nbins 200
+# Name and write frequency of model file. The line below causes the code to write every 100th model to "models.dat". Enter a frequency of -1 for no output. 
+output_model models.dat 100
+# Joint distribution output: if frequency is -1 then nothing is output; otherwise this defines the frequency
+output_joint_distribution_freq 1
+# -------------------------------------------------------
+# Additional (optional) information 
+# -------------------------------------------------------
+# These are not used in the RJMCMC inversion but only in the plotting routines to compare against.
+#
+# Plotting range of intensity
+Plotting_intensity_range 0 20
