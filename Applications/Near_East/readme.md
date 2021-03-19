@@ -19,6 +19,3 @@ The following files should have been created:
 * fig4\_cropped.pdf
 * supplement\_S2\_cropped.pdf
 * supplement\_S3\_cropped.pdf
-~                                                                                                                           
-~                                                                                                                           
-~                                     
