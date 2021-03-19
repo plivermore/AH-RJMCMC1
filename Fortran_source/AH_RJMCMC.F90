@@ -15,7 +15,7 @@ INTEGER, PARAMETER :: MAX_DATA  = 1000
 CHARACTER(len=500) :: ARG, Data_file_name, Header, WRITE_MODEL_FILE_NAME
 CHARACTER(len=500) :: inputline, junk, outputs_directory
 INTEGER ::  NARG
-CHARACTER(len=1) :: AGE_distribution(1:MAX_DATA), AGE_DISTRIBUTION_TYPE, STRATIFICATION_INDEX(1:MAX_DATA)
+CHARACTER(len=1) :: AGE_distribution(1:MAX_DATA), AGE_DISTRIBUTION_TYPE, STRATIFICATION_INDEX(1:MAX_DATA), LINKED_STRATIFICATION_INDEX(1:MAX_DATA)
 
 INTEGER :: I, K, BURN_IN, NSAMPLE, K_INIT, K_MAX, K_MIN, K_MAX_ARRAYBOUND, discretise_size, show, thin, num,j, num_age_changes, &
 NUM_DATA, IOS, K_MAX_ARRAY_BOUND, s, ind, NBINS, I_MODEL, FREQ_WRITE_MODELS, FREQ_WRITE_JOINT_DISTRIB, SAMPLE_INDEX_JOINT_DISTRIBUTION
@@ -28,8 +28,8 @@ INTEGER :: AGE_INDEX(1 : MAX_DATA), NUM_AGE_PARAMETERS
 CHARACTER(len=100), Allocatable :: LINE_READ(:)
 INTEGER, ALLOCATABLE :: SEED(:)
 
-INTEGER :: stratification(1:MAX_DATA)
-INTEGER ::  age_col, d_age_col, F_col, dF_col, distribution_col, id_col, type_col, strat_col, like_col
+INTEGER :: stratification(1:MAX_DATA), linked_stratification(1:MAX_DATA)
+INTEGER ::  age_col, d_age_col, F_col, dF_col, distribution_col, id_col, type_col, strat_col, like_col, DASH_POSITION
 
 REAL( KIND = 8) :: age(1:MAX_DATA), delta_age(1:MAX_DATA),  intensity(1:MAX_DATA), delta_intensity(1:MAX_DATA)
 CHARACTER(len=20) :: ID(1:MAX_DATA)
@@ -45,7 +45,6 @@ TYPE (RETURN_INFO_STRUCTURE) :: RETURN_INFO
 
 CALC_CREDIBLE = .TRUE.
 
-stratification(:) = 0 !default to no stratification.
 
 
 ! Load parameter file
@@ -258,48 +257,83 @@ ENDDO
 ! STRATIFICATION
 !****************
 ! Interpret stratification information
+
+MULTIPLE_STRATIFIED_DATA = .FALSE.
+LINKED_STRATIFICATION_INDEX(:) = ' '
+LINKED_STRATIFICATION(:) = 0
+stratification(:) = 0 !default to no stratification.
+
+
+IF ( strat_col .EQ. -1) THEN !no stratification at all
+stratification(:) = 0
+stratification_index(1:NUM_DATA) = 'a'
+
+ELSE !otherwise there is stratification as defined in the data file
 ! First, see if the user has specified different datasets using 1a, 2a, 3a; 1b, 2b; etc notation, or simply 1,2,3,4 etc.
 ! We can tell these apart by looking for the first non-zero instance of stratification_read_line(:) and seeing whether it ends with an 'a'.
-MULTIPLE_STRATIFIED_DATA = .FALSE.
+
 DO i = 1, NUM_DATA
 IF(index(stratification_read_line(i), 'a') .NE. 0) MULTIPLE_STRATIFIED_DATA = .TRUE.
 ENDDO
-!PRINT*, MULTIPLE_STRATIFIED_DATA
 
-IF( MULTIPLE_STRATIFIED_DATA ) THEN ! read in
+IF( MULTIPLE_STRATIFIED_DATA ) THEN ! read in assuming all entries comprise an integer and a single letter.
 ! separate into integer and character if non-zero
 STRATIFICATION(:) = 0
 STRATIFICATION_INDEX(:) = ' '
-DO i = 1, NUM_DATA
-IF( stratification_read_line(i)(1:1) .NE. '0') THEN
-J = LEN(TRIM(stratification_read_line(i)))
-READ( stratification_read_line(i)(1:j-1), *) STRATIFICATION(i)  !read an integer of unknown length
-READ( stratification_read_line(i)(j:j),'(A)') STRATIFICATION_INDEX(i)  !read a single character
-ENDIF
-ENDDO
-ELSE  !either no stratification, or only a single dataset is specified without the 'a' notation. In either case, set all elements of stratification_index to 'a'
-if ( strat_col .NE. -1) then
-! write(ERROR_UNIT,fmt="(a)") 'here'
-! write(ERROR_UNIT,*) stratification_read_line(1:num_data)
-DO I = 1, NUM_DATA
-!af
-!write(output_unit,*) stratification_read_line(i)
-READ( stratification_read_line(i), *) STRATIFICATION(I)
-ENDDO
-stratification_index(1:NUM_DATA) = 'a'
-end if
-ENDIF
+    DO i = 1, NUM_DATA
+        IF( stratification_read_line(i)(1:1) .NE. '0') THEN
+        J = LEN(TRIM(stratification_read_line(i)))
 
+        ! See if there is a dash present, indicating a link between two sequences
+        DASH_POSITION = INDEX(stratification_read_line(i), '-')  !DASH_POSITION is either 0 (no comma) or the position of the comma (starting at 1).
+        !print*, stratification_read_line(i), DASH_POSITION
+            IF( DASH_POSITION .NE. 0) THEN ! link
+            READ( stratification_read_line(i)(1:DASH_POSITION-2), *) STRATIFICATION(i)  !read an integer of unknown length, up to but not including the letter and comma.
+            READ( stratification_read_line(i)(DASH_POSITION-1:DASH_POSITION-1),'(A)') STRATIFICATION_INDEX(i)  !read a single character
+            ! now read the linking information
+            READ( stratification_read_line(i)(DASH_POSITION+1:j-1), *) LINKED_STRATIFICATION(i)  !read an integer of unknown length
+            READ( stratification_read_line(i)(j:j),'(A)') LINKED_STRATIFICATION_INDEX(i)  !read a single character
 
+            ELSE ! No link between sequences
+            READ( stratification_read_line(i)(1:j-1), *) STRATIFICATION(i)  !read an integer of unknown length
+            READ( stratification_read_line(i)(j:j),'(A)') STRATIFICATION_INDEX(i)  !read a single character
+            ENDIF
+        ENDIF
+    ENDDO
+ELSE  !only a single sequence is specified without the 'a' notation. Set all elements of stratification_index to 'a'.
+
+    DO I = 1, NUM_DATA
+    READ( stratification_read_line(i), *) STRATIFICATION(I)
+    ENDDO
+    stratification_index(1:NUM_DATA) = 'a'
+
+ENDIF
+ENDIF !stratification?
+
+PRINT*, ' '
+PRINT*, '*******STRATIFICATION*********************'
 IF( MAXVAL( stratification(1:NUM_DATA)) .eq. 0) THEN
 PRINT*, 'NO STRATIFICATION CONSTRAINTS'
 ELSE
 PRINT*, 'STRATIFICATION CONSTRAINTS BEING USED'
 ENDIF
 
+IF( MAXVAL( linked_stratification(1:NUM_DATA)) .NE. 0) THEN
+PRINT*, 'LINKED STRATIFIED SEQUENCES BEING USED'
+ELSE
+PRINT*, 'STRATIFIED SEQUENCES NOT LINKED'
+ENDIF
+PRINT*, ' '
+
+!OPEN(13, FILE = 'Stratification_info.dat', FORM = 'FORMATTED', STATUS = 'REPLACE')
 !DO i=1,NUM_DATA
-!PRINT*, STRATIFICATION(i), STRATIFICATION_INDEX(i)
+!WRITE(13,*) STRATIFICATION(i), STRATIFICATION_INDEX(i), LINKED_STRATIFICATION(i), LINKED_STRATIFICATION_INDEX(I)
 !ENDDO
+!CLOSE(13)
+
+
+
+
 
 ! If data_type is used, then gather together data of type 'B' with common ID. Assumes grouped data is listed sequentially.
 ! Grouped samples are moved collectively by the MCMC algorithm when changing a sample date.
@@ -379,7 +413,7 @@ ENDDO
 
 PRINT*, 'Normal likelihoods: ', COUNT( LIKE_TYPE(1:NUM_DATA) == 'N')
 PRINT*, 'Uniform likelihoods: ', COUNT( LIKE_TYPE(1:NUM_DATA) == 'U')
-PRINT*, '*************************************'
+PRINT*, ' '
 PRINT*, 'Number of age changes per resample-age perturbation is ', num_age_changes
 
 
@@ -387,7 +421,7 @@ PRINT*, 'Number of age changes per resample-age perturbation is ', num_age_chang
 
 ! copy input file
 call system('cp '//TRIM(ARG)//' '//TRIM(Outputs_directory)//'/input_file')
-CALL RJMCMC(burn_in, NUM_DATA, age(1:NUM_DATA), delta_age(1:NUM_DATA), intensity(1:NUM_DATA), delta_intensity(1:NUM_DATA), LIKE_TYPE(1:NUM_DATA), stratification(1: NUM_DATA), STRATIFICATION_INDEX(1:NUM_DATA), AGE_DISTRIBUTION(1:NUM_DATA), AGE_INDEX(1:NUM_AGE_PARAMETERS), NSAMPLE, I_MIN, I_MAX, X_MIN, X_MAX, K_MIN, K_MAX, SIGMA_MOVE, sigma_change_value, sigma_birth, sigma_age, age_frac, discretise_size, SHOW, THIN, NBINS, RETURN_INFO, CALC_CREDIBLE, FREQ_WRITE_MODELS, WRITE_MODEL_FILE_NAME, FREQ_WRITE_JOINT_DISTRIB,   credible, Outputs_directory, sd_uncertain_bound, sd_sigma, sd_fraction, num_age_changes)
+CALL RJMCMC(burn_in, NUM_DATA, age(1:NUM_DATA), delta_age(1:NUM_DATA), intensity(1:NUM_DATA), delta_intensity(1:NUM_DATA), LIKE_TYPE(1:NUM_DATA), stratification(1: NUM_DATA), STRATIFICATION_INDEX(1:NUM_DATA), LINKED_STRATIFICATION(1:NUM_DATA), LINKED_STRATIFICATION_INDEX(1:NUM_DATA), AGE_DISTRIBUTION(1:NUM_DATA), AGE_INDEX(1:NUM_AGE_PARAMETERS), NSAMPLE, I_MIN, I_MAX, X_MIN, X_MAX, K_MIN, K_MAX, SIGMA_MOVE, sigma_change_value, sigma_birth, sigma_age, age_frac, discretise_size, SHOW, THIN, NBINS, RETURN_INFO, CALC_CREDIBLE, FREQ_WRITE_MODELS, WRITE_MODEL_FILE_NAME, FREQ_WRITE_JOINT_DISTRIB,   credible, Outputs_directory, sd_uncertain_bound, sd_sigma, sd_fraction, num_age_changes)
 
 
 

@@ -21,7 +21,10 @@ Includes: an option for drawing from the prior age distributions when resampling
 
 **Version 5: revised June 16th 2020**
 Includes: an option for using a uniform distribution for the intensity, rather than normal distributions. 
-Reproduces the outputs for the manuscript (in review): "Archeomagnetic intensity variations during the era of geomagnetic spikes in the Near East".
+Reproduces the outputs for the manuscript: "Archeomagnetic intensity variations during the era of geomagnetic spikes in the Near East".
+
+**Version 6: revised March 19th 2021**
+Includes: an option for linking stratified data sets
 
 
 Authors: 
@@ -31,7 +34,7 @@ Thomas Bodin (Universite Lyon, Lyon)
 
 Maintained by Phil Livermore, Alex Fournier
 
-Last update: June 16th 2020
+Last update: March 19th 2021
 
 ## Overview
 
@@ -55,15 +58,16 @@ To run the Fortran code using a single inputfile, type
 
 `AH Applications/AH-RJMCMC/inputfiles/inputfile`
 
-For example,
+For example, to run the method on the Paris-700 dataset type
 
-`AH Applications/AH-RJMCMC/inputfiles/input_Paris700`
+`cd Applications/AH-RJMCMC`
 
-runs the AH-RJMCMC code using the Paris700 dataset.
+`../../AH inputfiles/input_Paris700`
+
 
 ## Example datasets:
 
-From the manuscript https://academic.oup.com/gji/article/215/3/2008/5101441
+1) From the manuscript **https://academic.oup.com/gji/article/215/3/2008/5101441**
 
 * Paris 700
 * Hawaii
@@ -73,13 +77,17 @@ Additionally
 
 * Paris-700, rescaled intensity error budget 
 
+(See readme in the folder: Applications/AH-RJMCMC).
 
-For the Near East study:
+2) The study of spikes in the Near East: **https://doi.org/10.1016/j.pepi.2021.106657** 
 
 * Near East, Mixed type
 * Near East, Group Level, N=2,3
 * Near East, Fragment level (original dataset, with modified variants)
 
+(See the readme in the folder Applications/Near_East)
+
+3) A linked sequence test case, see Applications/Linked_sequences 
 
 ## Making figures
 
@@ -104,7 +112,7 @@ Run
 
 `python ../make_Stratified_marginal_age_plot.py`
 
-to make a plot that shows the posterior ages of stratified data (specific to figure 16 of the referenced manuscript with the Lubeck-Paris dataset).
+to make a plot that shows the posterior ages of stratified data (specific to figure 16 of the referenced GJI manuscript with the Lubeck-Paris dataset).
 
 ## Inputfile structure
 
@@ -255,6 +263,10 @@ The column of stratification information within the data file can specify a vari
 - no stratification (denoted 0)
 - a single sequence of stratified layers (denoted 1,2,3,4...)
 - multiple (independent) sequences of stratified layers (denoted 1a, 2a, 3a...1b,2b,3b,...etc)
+- Sequences can be linked. For example, using 3a-1d, 4a, 5a....,1c,2c-1e,3c,4c.. (see below).
+
+The integer and integer-letter format cannot be mixed: e.g. 1a, 2a, 3a, 4, 5, 6 is not allowed.
+
 
 Multiple data may be present within a stratified layer. In such a case within each layer the data are assumed to be mutually independent but the layers themselves obey stratification.
 
@@ -263,7 +275,7 @@ The age ordering of for the whole data is determined from the data with paramete
 ## Example 1:
 The following data file describes a single sequence of stratified data
 
-| Unused column 	| Unused 	| Age    	| Age error 	| Intensity 	| Intensity error 	| Stratification 	|
+| Unused column 	| Unused column	| Age    	| Age error 	| Intensity 	| Intensity error 	| Stratification 	|
 |---------------	|--------	|--------	|--------	|-----------	|-----------------	|----------------	|
 | 0             	| 84     	| 1330.5 	| 47.5   	| 51.4      	| 0.7             	| 1              	|
 | 0             	| 83     	| 1391.5 	| 108.5  	| 53.5      	| 1.0             	| 2              	|
@@ -275,13 +287,13 @@ The following data file describes a single sequence of stratified data
  The data stratification is determined by data 1 and 2: age is increasing with stratification index.
  The ages are drawn according to the Monte-Carlo algorithm, provided that 
  
- Age Datum 1 <= Age datum 2 <= Age datum 3 etc.
+ **age datum 1 <= age datum 2 <= age datum 3 etc.**
 
 
 ## Example 2:
 The following data file describes a multiple sequence of stratified data
 
-| Unused column 	| Unused 	| Age    	| Age error 	| Intensity 	| Intensity error 	| Stratification 	|
+| Unused column 	| Unused column 	| Age    	| Age error 	| Intensity 	| Intensity error 	| Stratification 	|
 |---------------	|--------	|--------	|--------	|-----------	|-----------------	|----------------	|
 | 0             	| 84     	| 1330.5 	| 47.5   	| 51.4      	| 0.7             	| 1a              	|
 | 0             	| 83     	| 1391.5 	| 108.5  	| 53.5      	| 1.0             	| 2a              	|
@@ -294,9 +306,9 @@ The following data file describes a multiple sequence of stratified data
 
 The ages are drawn according to the Monte-Carlo algorithm, provided that 
  
- Age Datum 1a <= Age datum 2a <= Age datum 3a
+ **age datum 1a <= age datum 2a <= age datum 3a**
  
- Age Datum 1b <= Age datum 2b <= Age datum 3b
+ **age datum 1b <= age datum 2b <= age datum 3b**
  
 ## Example 3:
 The following data file describes a single stratification sequence, each layer constraining multiple data
@@ -314,6 +326,38 @@ The following data file describes a single stratification sequence, each layer c
 
 The ages are drawn according to the Monte-Carlo algorithm, provided that 
  
- All ages within layer 1 are <= All ages within layer 2
+ **all ages within layer 1 are <= all ages within layer 2**
  
  Within any layer there is no assumption of age ordering. Therefore, the first datum within layer 1 could have a drawn age greater or less than the second datum within layer 1. The only requirement in this example is that each datum within layer 1 has an age less than or equal to any datum within layer 2.
+
+## Example 4: linked sequences
+The following data file describes two linked sequence of stratified data
+
+| Unused column 	| Unused column 	| Age    	| Age error 	| Intensity 	| Intensity error 	| Stratification 	|
+|---------------	|--------	|--------	|--------	|-----------	|-----------------	|----------------	|
+| 0             	| 84     	| 1330.5 	| 47.5   	| 51.4      	| 0.7             	| 1a              	|
+| 0             	| 83     	| 1391.5 	| 108.5  	| 53.5      	| 1.0             	| 2a-1c              	|
+| 0             	| 82     	| 1400.5 	| 99.0   	| 54.8      	| 1.9             	| 3a              	|
+| 0             	| 82     	| 1395   	| 124.0  	| 56.1      	| 1.4             	| 1b              	|
+| 0             	| 83     	| 1396   	| 124.0  	| 57.8      	| 2.9             	| 2b-3c              	|
+| 0             	| 43     	| 1401 	| 60.5   	| 57.1      	| 2.0             	| 3b              	|
+| 0             	| 43     	| 1393 	| 23.5   	| 59.1      	| 3.1             	| 1d-2c              	|
+| 0             	| 43     	| 1420 	| 12.5   	| 62.1      	| 4.1             	| 2d             	|
+
+
+
+The data stratification is determined by the first data 1 and 2: age is increasing with stratification index.
+
+The ages are drawn according to the Monte-Carlo algorithm, provided that 
+ 
+ **age datum 1a <= age datum 2a <= age datum 3a**
+ 
+ **age datum 1b <= age datum 2b <= age datum 3b**
+ 
+ **age datum 1d <= age datum 2d**
+ 
+ Additionally, the three sequences (1a,2a,3a), (1b,2b,3b), (1d,2d) are linked by the condition:
+ 
+ **age datum 1c <= age datum 2c <= age datum 3c**
+ 
+ When specifying the linking, the indices do not need to be ordered (as in the example): here they come in the order (1c,3c,2c). 

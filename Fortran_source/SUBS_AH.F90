@@ -33,7 +33,7 @@ REAL( KIND = 8), PARAMETER :: PI = 3.14159265358979_8
 INTEGER :: RUNNING_MODE
 
 CONTAINS
-SUBROUTINE RJMCMC(burn_in, NUM_DATA, MIDPOINT_AGE, DELTA_AGE, INTENSITY, I_SD, LIKE_TYPE, STRATIFIED, STRATIFICATION_INDEX, AGE_DISTRIBUTION, AGE_INDICES, NSAMPLE, I_MIN, I_MAX, X_MIN, X_MAX, K_MIN, K_MAX, SIGMA_MOVE, sigma_change_value, sigma_birth, sigma_age, age_frac, discretise_size, SHOW, THIN, NBINS, RETURN_INFO, CALC_CREDIBLE, FREQ_WRITE_MODELS, WRITE_MODEL_FILE_NAME, FREQ_WRITE_JOINT_DISTRIB, credible, Outputs_directory, sd_uncertain_bound, sd_sigma, sd_fraction, num_age_changes)
+SUBROUTINE RJMCMC(burn_in, NUM_DATA, MIDPOINT_AGE, DELTA_AGE, INTENSITY, I_SD, LIKE_TYPE, STRATIFIED, STRATIFICATION_INDEX, LINKED_STRATIFIED, LINKED_STRATIFICATION_INDEX, AGE_DISTRIBUTION, AGE_INDICES, NSAMPLE, I_MIN, I_MAX, X_MIN, X_MAX, K_MIN, K_MAX, SIGMA_MOVE, sigma_change_value, sigma_birth, sigma_age, age_frac, discretise_size, SHOW, THIN, NBINS, RETURN_INFO, CALC_CREDIBLE, FREQ_WRITE_MODELS, WRITE_MODEL_FILE_NAME, FREQ_WRITE_JOINT_DISTRIB, credible, Outputs_directory, sd_uncertain_bound, sd_sigma, sd_fraction, num_age_changes)
 
 
 IMPLICIT NONE
@@ -48,14 +48,14 @@ sigma_birth, sigma_age, like_prop, prob, INT_J, pt_death(2), &
 X_MIN, X_MAX, U, RAND(2), alpha, TEMP_RAND, AGE_FACTOR_FOR_PRIOR
 CHARACTER(300) :: WRITE_MODEL_FILE_NAME, format_descriptor, FILENAME
 CHARACTER(1) :: AGE_DISTRIBUTION(:), LIKE_TYPE(:)
-CHARACTER :: STRATIFICATION_INDEX(1:NUM_DATA)
+CHARACTER :: STRATIFICATION_INDEX(1:NUM_DATA), LINKED_STRATIFICATION_INDEX(1:NUM_DATA)
 INTEGER, ALLOCATABLE :: ORDER(:)
 REAL( KIND = 8) :: ENDPT_BEST(2), age_frac, credible, age1, age2, sd_uncertain_bound, sd_sigma, sd_fraction
 REAL( KIND = 8) :: sd_factor, sd_factor_prop
 INTEGER :: AGE_INDICES(:), MAX_AGE_INDEX, i_age2
 
 INTEGER :: b, bb, AB, AD, PD, PB, ACV, PCV, AP, PP, PA, AA, num_age_changes, P_sd, A_sd,&
-STRATIFIED(:), STRATIFICATION_AGE_DIRECTION
+STRATIFIED(:), STRATIFICATION_AGE_DIRECTION, LINKED_STRATIFIED(:)
 REAL( KIND = 8) :: MIDPOINT_AGE(:), DELTA_AGE(:), Intensity(:), I_sd(:), ENDPT(2), ENDPT_PROP(2), like, like_best, like_init
 REAL( KIND = 8), ALLOCATABLE :: VAL_MIN(:), VAL_MAX(:),   MINI(:,:), MAXI(:,:), PT(:,:), PT_PROP(:,:)
 REAL( KIND = 8), ALLOCATABLE :: interpolated_signal(:), X(:), PTS_NEW(:,:), PT_BEST(:,:), age(:), age_prop(:), interpolated_signal_grad(:), X2(:)
@@ -232,7 +232,7 @@ ENDIF
 AGE(1:NUM_DATA) = MIDPOINT_AGE(1:NUM_DATA)
 
 ! Check to ensure that the stratification constraints (if any) are satisifed
-IF( .NOT. CHECK_STRATIFICATION(AGE, STRATIFIED, STRATIFICATION_INDEX, STRATIFICATION_AGE_DIRECTION, NUM_DATA) ) THEN
+IF( .NOT. CHECK_STRATIFICATION(AGE, STRATIFIED, STRATIFICATION_INDEX, LINKED_STRATIFIED, LINKED_STRATIFICATION_INDEX, STRATIFICATION_AGE_DIRECTION, NUM_DATA) ) THEN
 write(error_unit,fmt=*) 'INITIAL DATA SET IS NOT CONSISTENT WITH GIVEN STRATIFICATION CONSTRAINTS'
 STOP
 ENDIF
@@ -285,7 +285,7 @@ endpt(2) = I_min+RAND(2) * (I_max-I_min)
 
 
 ! Check to ensure that the stratification constraints (if any) are satisifed
-IF( .NOT. CHECK_STRATIFICATION(AGE, STRATIFIED, STRATIFICATION_INDEX, &
+IF( .NOT. CHECK_STRATIFICATION(AGE, STRATIFIED, STRATIFICATION_INDEX, LINKED_STRATIFIED, LINKED_STRATIFICATION_INDEX, &
 STRATIFICATION_AGE_DIRECTION, NUM_DATA) ) THEN
 write(error_unit,fmt=*) 'INITIAL CONDITION IS NOT CONSISTENT WITH GIVEN &
 STRATIFICATION CONSTRAINTS'
@@ -616,7 +616,7 @@ IF( age_prop(i_age2) > D_MAX ) out = 0! THEN; PRINT*, 'PROPOSED AGE > DMAX'; PRI
 change_age = 1  !the acceptance probability is the same for MOVE
 ENDDO
 
-IF( .NOT. CHECK_STRATIFICATION(AGE_PROP, STRATIFIED, STRATIFICATION_INDEX, STRATIFICATION_AGE_DIRECTION,  NUM_DATA) ) out = 0
+IF( .NOT. CHECK_STRATIFICATION(AGE_PROP, STRATIFIED, STRATIFICATION_INDEX, LINKED_STRATIFIED, LINKED_STRATIFICATION_INDEX, STRATIFICATION_AGE_DIRECTION,  NUM_DATA) ) out = 0
 ENDIF
 ENDIF ! decide on what proposal to make
 !----------------------------------------------------------------------
@@ -1231,20 +1231,36 @@ ENDDO
 
 END FUNCTION CHECK_DIFFERENT
 
-FUNCTION CHECK_STRATIFICATION(AGES, STRATIFICATION, STRATIFICATION_INDEX, STRATIFICATION_AGE_DIRECTION, N)
-! In the data file, stratified data are grouped as
+FUNCTION CHECK_STRATIFICATION(AGES, STRATIFICATION, STRATIFICATION_INDEX, LINKED_STRATIFICATION, LINKED_STRATIFICATION_INDEX, STRATIFICATION_AGE_DIRECTION, N)
+! Checks that the stratification constraints are satisfied.
+! There are two parts to this:
+! (a) check that the individual sequences conform to the stratification constraints
+! (b) check that any linked sequences conform
+!
+! In the arguments STRATIFICATION, STRATIFICATION_INDEX, the data are grouped as
 ! 1a
 ! 2a
+! ...
 ! 1b
 ! 2b etc.   [for two independent groups]
+!
+! The same notation is used for LINKED_STRATIFICATION, LINKED_STRATIFICATION_INDEX i.e.
+! There is no requirement for the non-zero values to be sequential or ordered e.g. the indices could be:
+! 0
+! 1d
+! 0
+! 3d
+! 2d
+! 0
+! ....
 ! This routine checks the stratification - returns .TRUE. if everything if the ages are consistent with the stratification constraints, .FALSE. if not.
-! Stratification is either 1 (the data is tied to neighbouring values with value 1) or 0 (untied).
+!
 IMPLICIT NONE
 LOGICAL :: CHECK_STRATIFICATION
 INTEGER :: N, i, j
-INTEGER :: STRATIFICATION(1:N), STRATIFICATION_AGE_DIRECTION
+INTEGER :: STRATIFICATION(1:N), STRATIFICATION_AGE_DIRECTION, LINKED_STRATIFICATION(1:N)
 REAL( KIND = 8) :: AGES(1:N)
-CHARACTER :: STRATIFICATION_INDEX(1:N)   !contains a,b,c etc. for the group of the stratification
+CHARACTER :: STRATIFICATION_INDEX(1:N), LINKED_STRATIFICATION_INDEX(1:N)   !contains a,b,c etc. for the group of the stratification
 CHECK_STRATIFICATION = .TRUE.
 
 ! This subroutine checks to see if the stratification constraints are satisfied.
@@ -1294,7 +1310,40 @@ ENDIF
 ENDDO
 ENDDO
 
+! check any linked sequences; early return if this check is not needed.
+IF( MAXVAL(LINKED_STRATIFICATION) .EQ. 0) RETURN
+
+DO I = 1, N
+IF( LINKED_STRATIFICATION(I) .EQ. 0) CYCLE
+
+! At this point, index i refers to a stratified datum
+! Check all indices j
+DO J = 1, N
+IF( (LINKED_STRATIFICATION(J) .EQ. LINKED_STRATIFICATION(I) + 1) .AND. &
+    (LINKED_STRATIFICATION_INDEX(J) .EQ. LINKED_STRATIFICATION_INDEX(I) ) ) THEN
+! At this point, we are comparing e.g. i -> 2a, j -> 3a
+
+! We need only check each index e.g. 2a with the one higher (if it exists) e.g. 3a.
+! We assume that the check between 1a and 2a has already been made on a previous iteration.
+! If a higher index does not exist, then it is never tested and so passes.
+! The routine only returns a .FALSE. if a valid test fails.
+
+    IF (STRATIFICATION_AGE_DIRECTION == AGE_ASCENDING .AND. ages(I) > ages(J) ) THEN
+    CHECK_STRATIFICATION = .FALSE.
+    RETURN
+    ENDIF
+
+    IF (STRATIFICATION_AGE_DIRECTION == AGE_DESCENDING .AND. ages(I) < ages(J) ) THEN
+    CHECK_STRATIFICATION = .FALSE.
+    RETURN
+    ENDIF
+
+ENDIF
+ENDDO
+ENDDO
+
 RETURN
+
 END FUNCTION CHECK_STRATIFICATION
 
 
