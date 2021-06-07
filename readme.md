@@ -144,9 +144,10 @@ There are multiple input files in the Github directory that you can use as templ
 If -1 is specified, the data type is set internally within the code to 'O'(ther), which is never accessed.
 In the data file, the choices of type are: P, B, C, S: pottery, brick, baked clay, slag.
 
-* age distribution: the column number specifying the age distribution flag or 
--1 if ALL the data ages are distributed uniformly (with centre point given by the age, and half-width given by the delta age)
--2 if ALL the data ages are distributed normally (with mean given by the age, and standard deviation given by delta age)
+* age distribution: 
+	* the column number specifying the age distribution type. In the corresponding data file, the distribution should be specified by a column of single characters: "N" (normal) or "U" (uniform) for each datum. If uniform, the given age and delta age specifies the centre point and half-width; if normal, the given age and delta age specifies the mean and standard deviation.
+	* -1 if ALL the data ages are distributed uniformly (with centre point given by the age, and half-width given by the delta age) or
+	* -2 if ALL the data ages are distributed normally (with mean given by the age, and standard deviation given by delta age)
 
 * stratification: the column number specifying stratification information or 
 -1 if stratification is to be ignored. 
